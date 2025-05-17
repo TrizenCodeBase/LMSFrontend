@@ -4,7 +4,7 @@ const baseURL = 'https://lmsbackend.llp.trizenventures.com/';
 
 const instance = axios.create({
   baseURL,
-  withCredentials: false,
+  withCredentials: true,
 });
 
 // Add a request interceptor to add the token
