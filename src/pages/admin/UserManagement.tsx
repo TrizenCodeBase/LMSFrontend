@@ -284,7 +284,7 @@ const UserManagement = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
+                    {/* <TableHead>Status</TableHead> */}
                     <TableHead>Joined</TableHead>
                     <TableHead>Last Active</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -314,7 +314,7 @@ const UserManagement = () => {
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell className="capitalize">{user.role}</TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      {/* <TableCell>{getStatusBadge(user.status)}</TableCell> */}
                         <TableCell>{formatDate(user.createdAt)}</TableCell>
                         <TableCell>{formatDate(user.lastActive)}</TableCell>
                       <TableCell className="text-right">
