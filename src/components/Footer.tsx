@@ -45,10 +45,15 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/instructor-signup" className="text-muted-foreground hover:text-primary flex items-center gap-2">
+                <a 
+                  href="https://instructor.lms.trizenventures.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-muted-foreground hover:text-primary flex items-center gap-2"
+                >
                   <BookOpen className="h-4 w-4" />
                   <span>Become an Instructor</span>
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
