@@ -197,6 +197,7 @@ const UserManagement = () => {
   };
 
   const filteredUsers = users.filter(user => {
+    if (user.role === 'admin') return false;
     const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
