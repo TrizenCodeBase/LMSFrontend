@@ -92,6 +92,8 @@ const LoginForm = () => {
                 <div className="flex items-center justify-between">
                   <FormLabel>Password</FormLabel>
                   <Button 
+                    type="button"
+
                     variant="link" 
                     className="px-0 text-sm font-semibold text-primary"
                     onClick={() => navigate('/forgot-password')}
