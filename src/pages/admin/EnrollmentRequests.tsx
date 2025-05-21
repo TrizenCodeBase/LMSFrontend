@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,7 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios, { getImageUrl } from '@/lib/axios';
+import axios from '@/lib/axios';
+import { getImageUrl } from '@/lib/axios';
+import { AlertCircle, RefreshCcw, Download, ExternalLink } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EnrollmentRequest {
   _id: string;
@@ -31,6 +34,9 @@ interface EnrollmentRequest {
 const EnrollmentRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<EnrollmentRequest | null>(null);
   const [viewImageOpen, setViewImageOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -88,6 +94,23 @@ const EnrollmentRequests = () => {
     },
   });
 
+  // Load image URL when a request is selected
+  useEffect(() => {
+    const loadImageUrl = async () => {
+      if (selectedRequest) {
+        try {
+          const url = await getImageUrl(selectedRequest.transactionScreenshot);
+          setImageUrl(url);
+          setImageError(false);
+        } catch (error) {
+          console.error('Error loading image URL:', error);
+          setImageError(true);
+        }
+      }
+    };
+    loadImageUrl();
+  }, [selectedRequest]);
+
   // Handle approve click
   const handleApprove = (request: EnrollmentRequest) => {
     approveMutation.mutate(request._id);
@@ -118,6 +141,20 @@ const EnrollmentRequests = () => {
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">Pending</Badge>;
+    }
+  };
+
+  // Handle image retry
+  const handleRetryImage = async () => {
+    setIsRetrying(true);
+    setImageError(false);
+    try {
+      const url = await getImageUrl(selectedRequest!.transactionScreenshot);
+      setImageUrl(url + '?t=' + new Date().getTime());
+    } catch (error) {
+      setImageError(true);
+    } finally {
+      setIsRetrying(false);
     }
   };
 
@@ -204,7 +241,7 @@ const EnrollmentRequests = () => {
       
         {/* Image Dialog */}
         <Dialog open={viewImageOpen} onOpenChange={setViewImageOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>Transaction Screenshot</DialogTitle>
               <DialogDescription>
@@ -212,12 +249,66 @@ const EnrollmentRequests = () => {
               </DialogDescription>
             </DialogHeader>
             {selectedRequest && (
-              <div className="mt-4 flex justify-center">
-                <img 
-                  src={getImageUrl(selectedRequest.transactionScreenshot)}
-                  alt="Transaction Screenshot" 
-                  className="max-h-[70vh] max-w-full object-contain rounded" 
-                />
+              <div className="mt-4 flex flex-col items-center space-y-4">
+                <div className="relative w-full min-h-[300px] bg-slate-50 rounded-lg">
+                  {(!imageUrl || isRetrying) && !imageError && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-8 h-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    </div>
+                  )}
+                  
+                  {imageError ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-red-500">
+                      <AlertCircle className="h-8 w-8 mb-2" />
+                      <p className="text-sm">Failed to load image</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRetryImage}
+                        className="mt-2"
+                      >
+                        <RefreshCcw className="h-4 w-4 mr-2" />
+                        Retry
+                      </Button>
+                    </div>
+                  ) : (
+                    imageUrl && (
+                      <img 
+                        src={imageUrl}
+                        alt="Transaction Screenshot" 
+                        className="max-h-[80vh] w-full object-contain rounded shadow-lg" 
+                        onError={() => setImageError(true)}
+                      />
+                    )
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (imageUrl) {
+                        const link = document.createElement('a');
+                        link.href = imageUrl;
+                        link.download = `payment-${selectedRequest.email}-${new Date().toISOString()}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
+                    }}
+                    disabled={!imageUrl || imageError}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Screenshot
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(imageUrl, '_blank')}
+                    disabled={!imageUrl || imageError}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open in New Tab
+                  </Button>
+                </div>
               </div>
             )}
           </DialogContent>

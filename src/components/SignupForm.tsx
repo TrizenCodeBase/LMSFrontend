@@ -1,222 +1,189 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useNavigate } from 'react-router-dom';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BookOpen, User, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import SignupChoice from './SignupChoice';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Alert, AlertDescription } from './ui/alert';
-import { Separator } from './ui/separator';
+import { cn } from '@/lib/utils';
 
-type UserRole = 'student' | 'instructor';
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  password: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: "Password must contain at least one uppercase letter, one lowercase letter, and one number.",
+  }),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
 
 const SignupForm = () => {
-  const [name, setName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('student');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [specialty, setSpecialty] = useState('');
-  const [experience, setExperience] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [signupError, setSignupError] = useState('');
-  const { signup } = useAuth();
   const navigate = useNavigate();
+  const { signup } = useAuth();
   const { toast } = useToast();
 
-  const validatePasswords = () => {
-    if (password !== confirmPassword) {
-      setPasswordError("Passwords don't match");
-      return false;
-    }
-    if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
-      return false;
-    }
-    setPasswordError('');
-    return true;
-  };
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-  const validateInstructorFields = () => {
-    if (selectedRole === 'instructor') {
-      if (!specialty.trim()) {
-        setSignupError('Please enter your specialty');
-        return false;
-      }
-      if (!experience.trim() || isNaN(Number(experience))) {
-        setSignupError('Please enter valid years of experience');
-        return false;
-      }
-    }
-    return true;
-  };
+  const isLoading = form.formState.isSubmitting;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedRole) {
-      setSignupError('Please select a role');
-      return;
-    }
-
-    if (!validatePasswords() || !validateInstructorFields()) {
-      return;
-    }
-    
-    setSignupError('');
-    setIsLoading(true);
-    
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const signupData = {
-        name,
-        email,
-        password,
-        role: selectedRole,
-        ...(selectedRole === 'instructor' && {
-          specialty,
-          experience: Number(experience)
-        })
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        role: 'student' as const
       };
 
       await signup(signupData);
       
+      toast({
+        title: "Account created!",
+        description: "Welcome to Trizen. You can now start learning.",
+        variant: "default",
+      });
+      
     } catch (error: any) {
       console.error("Signup error:", error);
       const errorMessage = error.message || 'Failed to create account. Please try again.';
-      setSignupError(errorMessage);
+      
       toast({
         title: "Signup failed",
         description: errorMessage,
         variant: "destructive",
-        duration: 5000,
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6 p-6 bg-card rounded-lg shadow-md">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">Create an Account</h2>
-        <p className="text-muted-foreground mt-1">Join Trizen to access high-quality courses</p>
+    <div className="w-full max-w-md mx-auto space-y-6 p-8 bg-card rounded-xl shadow-lg">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Create an Account</h2>
+        <p className="text-muted-foreground">Join Trizen to access high-quality courses</p>
       </div>
 
-      <SignupChoice
-        selected={selectedRole}
-        onSelect={setSelectedRole}
-      />
       
-      {signupError && (
-        <Alert variant="destructive">
-          <AlertDescription>{signupError}</AlertDescription>
-        </Alert>
-      )}
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="John Doe"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="name@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
 
-        {selectedRole === 'instructor' && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="specialty">Specialty</Label>
-              <Input
-                id="specialty"
-                type="text"
-                placeholder="e.g., Web Development, Data Science"
-                value={specialty}
-                onChange={(e) => setSpecialty(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="experience">Years of Experience</Label>
-              <Input
-                id="experience"
-                type="number"
-                min="0"
-                placeholder="e.g., 5"
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                required
-              />
-            </div>
-          </>
-        )}
-        
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                    <Input placeholder="Your Name" className="pl-10" {...field} />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          {passwordError && (
-            <p className="text-sm text-destructive">{passwordError}</p>
-          )}
-        </div>
 
-        {selectedRole === 'instructor' && (
-          <Alert>
-            <AlertDescription>
-              Your instructor application will be reviewed by our team. We'll notify you by email once it's approved. During this time, you can prepare your course materials and review our instructor guidelines.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Creating account...' : selectedRole === 'instructor' ? 'Submit Application' : 'Sign Up'}
-        </Button>
-      </form>
-      
-      <div className="mt-6 text-center text-sm">
-        <p>Already have an account? 
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                    <Input placeholder="name@example.com" className="pl-10" {...field} />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                    <Input type="password" className="pl-10" {...field} />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                    <Input type="password" className="pl-10" {...field} />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button 
+            type="submit" 
+            className="w-full h-11 text-base font-medium" 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Creating account...
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                Create Account
+                <ArrowRight className="h-5 w-5" />
+              </div>
+            )}
+          </Button>
+        </form>
+      </Form>
+
+      <div className="text-center text-sm">
+        <p className="text-muted-foreground">
+          Already have an account?{' '}
           <Button 
             variant="link" 
-            className="pl-1" 
+            className="pl-1 font-semibold" 
             onClick={() => navigate('/login')}
           >
-            Login
+            Sign in
           </Button>
         </p>
       </div>

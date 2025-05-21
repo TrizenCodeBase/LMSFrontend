@@ -387,6 +387,7 @@ const CourseWeekView = () => {
         courseId,
         progress: progressPercentage,
         status: status as 'enrolled' | 'started' | 'completed',
+        dayNumber: day,
         token
       });
       
@@ -396,10 +397,10 @@ const CourseWeekView = () => {
           ? `Day ${day} marked as incomplete` 
           : `Day ${day} marked as complete`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error saving progress",
-        description: "Could not update your course progress. Please try again.",
+        description: error.response?.data?.message || "Could not update your course progress. Please try again.",
         variant: "destructive",
       });
       
@@ -472,11 +473,30 @@ const CourseWeekView = () => {
 
   const isVideoEnabled = (day: number) => {
     if (day === 1) return true;
-    return watchedVideos.includes(day - 1) || completedDays.includes(day - 1);
+    return completedDays.includes(day - 1);
   };
 
   const isMCQsEnabled = (day: number) => {
     return watchedVideos.includes(day) || completedDays.includes(day);
+  };
+
+  const isDayLocked = (day: number) => {
+    if (day === 1) return false;
+    return !completedDays.includes(day - 1);
+  };
+
+  const handleDaySelect = (day: number) => {
+    if (isDayLocked(day)) {
+      toast({
+        title: "Day Locked",
+        description: "Please complete the previous day first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSelectedDay(day);
+    setIsSidebarOpen(false);
+    setShowQuiz(false);
   };
 
   const SidebarContent = () => (
@@ -490,15 +510,13 @@ const CourseWeekView = () => {
           {course?.roadmap.map((day) => (
             <button
               key={day.day}
-              onClick={() => {
-                setSelectedDay(day.day);
-                setIsSidebarOpen(false);
-                setShowQuiz(false); // Hide quiz when changing days
-              }}
+              onClick={() => handleDaySelect(day.day)}
               className={cn(
                 "flex flex-col w-full p-3 rounded-lg text-sm gap-1 transition-colors text-left",
                 selectedDay === day.day
                   ? "bg-primary text-primary-foreground"
+                  : isDayLocked(day.day)
+                  ? "bg-gray-100 hover:bg-gray-200 cursor-not-allowed"
                   : "hover:bg-muted",
                 completedDays.includes(day.day) && selectedDay !== day.day && "text-green-500"
               )}
@@ -509,9 +527,16 @@ const CourseWeekView = () => {
                   {completedDays.includes(day.day) && (
                     <CheckCircle className="h-4 w-4" />
                   )}
+                  {isDayLocked(day.day) && (
+                    <Lock className="h-4 w-4 text-gray-500" />
+                  )}
                 </div>
                 <span className="text-xs opacity-70">
-                  {completedDays.includes(day.day) ? 'Completed' : 'Not Started'}
+                  {completedDays.includes(day.day) 
+                    ? 'Completed' 
+                    : isDayLocked(day.day)
+                    ? 'Locked'
+                    : 'Not Started'}
                 </span>
               </div>
               <p className={cn(

@@ -205,17 +205,28 @@ const Header = () => {
           ) : (
             <div className="flex items-center gap-3">
               <Button 
-                variant="outline" 
+                variant={location.pathname === '/login' ? 'default' : 'outline'}
                 size="sm" 
                 onClick={() => navigate('/login')}
-                className="transition-all hover:border-primary hover:text-primary"
+                className={cn(
+                  "transition-all",
+                  location.pathname === '/login' 
+                    ? "bg-primary text-white hover:bg-primary/90" 
+                    : "border-primary text-primary hover:bg-primary/10"
+                )}
               >
                 Login
               </Button>
               <Button 
                 size="sm" 
+                variant={location.pathname === '/signup' ? 'default' : 'outline'}
                 onClick={() => navigate('/signup')}
-                className="bg-primary text-white hover:bg-primary/90 transition-all"
+                className={cn(
+                  "transition-all",
+                  location.pathname === '/signup'
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "border-primary text-primary hover:bg-primary/10"
+                )}
               >
                 Signup
               </Button>

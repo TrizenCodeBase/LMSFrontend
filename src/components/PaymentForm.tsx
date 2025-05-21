@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -12,6 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import axios from "@/lib/axios";
 import { useToast } from "@/hooks/use-toast";
+
 // Define form schema
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -120,6 +122,11 @@ const PaymentForm = () => {
                 src="/Payment QR Cropped.jpg"
                 alt="Payment QR Code" 
                 className="w-full max-w-[250px] sm:max-w-[300px]"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = '/placeholder.svg';
+                }}
               />
             </div>
             <p className="text-base sm:text-lg text-center font-semibold text-black mt-3">
@@ -220,6 +227,11 @@ const PaymentForm = () => {
                           src={imagePreview} 
                           alt="Transaction Screenshot Preview" 
                           className="max-h-40 w-full object-contain" 
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = '/placeholder.svg';
+                          }}
                         />
                       </div>
                     )}
