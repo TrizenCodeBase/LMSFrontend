@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Video, CheckCircle, AlertCircle, Menu, Lock, Unlock, Clock } from "lucide-react";
+import { Video, CheckCircle, AlertCircle, Menu, Lock, Unlock, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import Plyr from 'plyr-react';
 import 'plyr-react/plyr.css';
+import { CustomToast } from "@/components/ui/custom-toast";
 
 // Import your logo image
 import companyLogo from '/logo_footer.png'; // Adjust path as needed
@@ -311,6 +312,7 @@ const CourseWeekView = () => {
   const transcriptRef = useRef<HTMLDetailsElement>(null);
   const topicsRef = useRef<HTMLDetailsElement>(null);
   const mcqsRef = useRef<HTMLDetailsElement>(null);
+  const [isMarking, setIsMarking] = useState(false);
 
   // Parse URL parameters
   useEffect(() => {
@@ -366,28 +368,28 @@ const CourseWeekView = () => {
   }, [course, selectedDay]);
 
   const handleDayComplete = async (day: number) => {
-    if (!token || !courseId || !course?.roadmap) return;
-    
-    let newCompletedDays: number[];
-    
-    if (completedDays.includes(day)) {
-      newCompletedDays = completedDays.filter(d => d !== day);
-    } else {
-      newCompletedDays = [...completedDays, day];
-    }
-    
-    setCompletedDays(newCompletedDays);
-    
-    const progressPercentage = Math.round((newCompletedDays.length / course.roadmap.length) * 100);
-    
-    let status = 'enrolled';
-    if (progressPercentage > 0 && progressPercentage < 100) {
-      status = 'started';
-    } else if (progressPercentage === 100) {
-      status = 'completed';
-    }
-    
     try {
+      setIsMarking(true);
+      
+      let newCompletedDays: number[];
+      
+      if (completedDays.includes(day)) {
+        newCompletedDays = completedDays.filter(d => d !== day);
+      } else {
+        newCompletedDays = [...completedDays, day];
+      }
+      
+      setCompletedDays(newCompletedDays);
+      
+      const progressPercentage = Math.round((newCompletedDays.length / (course?.roadmap.length || 1)) * 100);
+      
+      let status = 'enrolled';
+      if (progressPercentage > 0 && progressPercentage < 100) {
+        status = 'started';
+      } else if (progressPercentage === 100) {
+        status = 'completed';
+      }
+      
       await updateProgressMutation.mutateAsync({
         courseId,
         progress: progressPercentage,
@@ -395,21 +397,33 @@ const CourseWeekView = () => {
         dayNumber: day,
         token
       });
-      
-      toast({
-        title: completedDays.includes(day) ? "Progress removed" : "Progress saved",
-        description: completedDays.includes(day) 
-          ? `Day ${day} marked as incomplete` 
-          : `Day ${day} marked as complete`,
-      });
+
+      // Navigate to next day if available and if marking as complete
+      if (!completedDays.includes(day)) {
+        const nextDay = course?.roadmap.find(d => d.day === day + 1);
+        if (nextDay) {
+          setTimeout(() => {
+            setSelectedDay(nextDay.day);
+          }, 500); // Small delay to ensure the completion is registered
+        }
+      }
+
     } catch (error: any) {
       toast({
-        title: "Error saving progress",
-        description: error.response?.data?.message || "Could not update your course progress. Please try again.",
-        variant: "destructive",
+        description: (
+          <CustomToast 
+            title="Error saving progress"
+            description={error.response?.data?.message || "Could not update your course progress. Please try again."}
+            type="error"
+          />
+        ),
+        duration: 3000,
+        className: "p-0 bg-transparent border-0"
       });
       
       setCompletedDays(completedDays);
+    } finally {
+      setIsMarking(false);
     }
   };
 
@@ -493,9 +507,15 @@ const CourseWeekView = () => {
   const handleDaySelect = (day: number) => {
     if (isDayLocked(day)) {
       toast({
-        title: "Day Locked",
-        description: "Please complete the previous day first.",
-        variant: "destructive"
+        description: (
+          <CustomToast 
+            title="Day Locked"
+            description="Kindly complete today's video and click 'Mark Complete' to advance to the next day."
+            type="warning"
+          />
+        ),
+        duration: 3000,
+        className: "p-0 bg-transparent border-0"
       });
       return;
     }
@@ -514,6 +534,15 @@ const CourseWeekView = () => {
   const toggleDetails = (ref: React.RefObject<HTMLDetailsElement>) => {
     if (ref.current) {
       ref.current.open = !ref.current.open;
+    }
+  };
+
+  const handleMarkComplete = async (day: number) => {
+    await handleDayComplete(day);
+    // Navigate to next day if available
+    const nextDay = course?.roadmap.find(d => d.day === day + 1);
+    if (nextDay) {
+      setSelectedDay(nextDay.day);
     }
   };
 
@@ -633,186 +662,205 @@ const CourseWeekView = () => {
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
           {currentDay && (
             <div className="max-w-4xl mx-auto space-y-6 pt-12 md:pt-0">
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold mb-2">Day {currentDay.day}</h1>
-                <p className="text-sm md:text-base text-muted-foreground">{currentDay.topics}</p>
+              <div className="flex flex-col md:flex-row md:items-center mb-4">
+                <div className="flex-1">
+                  <h1 className="text-xl md:text-2xl font-bold mb-2">Day {currentDay.day}</h1>
+                  <p className="text-sm md:text-base text-muted-foreground">{currentDay.topics}</p>
+                </div>
               </div>
 
-              {showQuiz && currentDay.mcqs && currentDay.mcqs.length > 0 ? (
-                <MCQQuiz 
-                  questions={currentDay.mcqs} 
-                  onComplete={handleQuizComplete}
-                  dayNumber={currentDay.day}
-                />
-              ) : (
-                <>
-                  <Card>
-                    <CardContent className="p-4 md:p-6">
-                      <VideoPlayer 
-                        videoUrl={currentDay.video} 
-                        onVideoComplete={() => handleVideoComplete(currentDay.day)}
-                        isEnabled={isVideoEnabled(currentDay.day)}
-                      />
-                    </CardContent>
-                  </Card>
+              <Card>
+                <CardContent className="p-4 md:p-6">
+                  <VideoPlayer 
+                    videoUrl={currentDay.video} 
+                    onVideoComplete={() => handleVideoComplete(currentDay.day)}
+                    isEnabled={isVideoEnabled(currentDay.day)}
+                  />
+                </CardContent>
+              </Card>
 
-                  {currentDay.notes && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg md:text-xl">Notes</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap">
-                          {currentDay.notes}
-                        </p>
-                      </CardContent>
-                    </Card>
+              {/* Navigation and Mark Complete Buttons */}
+              <div className="flex items-center justify-end gap-4 mt-4 mb-6">
+                <Button
+                  onClick={() => handleDaySelect(currentDay.day - 1)}
+                  variant="outline"
+                  disabled={currentDay.day === 1}
+                  className="flex items-center gap-2 text-primary hover:text-primary hover:bg-primary/10"
+                >
+                  <ArrowRight className="h-4 w-4 rotate-180" />
+                  Previous Day
+                </Button>
+
+                <Button
+                  onClick={() => handleDayComplete(currentDay.day)}
+                  variant="default"
+                  disabled={isMarking}
+                  className={cn(
+                    "flex items-center gap-2 relative transition-all duration-200 min-w-[180px] justify-center",
+                    completedDays.includes(currentDay.day)
+                      ? "bg-green-500 hover:bg-green-600 text-white"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90",
+                    isMarking && "opacity-80 cursor-not-allowed"
                   )}
-
-                  {/* Dropdown sections for Transcript */}
-                  <details ref={transcriptRef} className="rounded-md border mb-4 bg-background">
-                    <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none">
-                      <div className="flex items-center justify-between w-full">
-                        <CardTitle className="text-lg md:text-xl">Video Transcript</CardTitle>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleDetails(transcriptRef);
-                          }}
-                        >
-                          {transcriptRef.current?.open ? "Hide" : "Show"}
-                        </Button>
-                      </div>
-                    </summary>
-                    <div className="p-4 border-t">
-                      {currentDay.transcript ? (
-                        <p className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap">
-                          {currentDay.transcript}
-                        </p>
+                >
+                  {isMarking ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{completedDays.includes(currentDay.day) ? "Completed" : "Complete and Continue"}</span>
+                      {completedDays.includes(currentDay.day) ? (
+                        <CheckCircle className="h-4 w-4 ml-2" />
                       ) : (
-                        <p className="text-sm text-muted-foreground italic">No transcript available for this video.</p>
+                        <ArrowRight className="h-4 w-4" />
                       )}
-                    </div>
-                  </details>
+                    </>
+                  )}
+                </Button>
+              </div>
 
-                  {/* Dropdown sections for Topics */}
-                  <details ref={topicsRef} className="rounded-md border mb-4 bg-background">
-                    <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none">
-                      <div className="flex items-center justify-between w-full">
-                        <CardTitle className="text-lg md:text-xl">Topics Covered</CardTitle>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleDetails(topicsRef);
-                          }}
-                        >
-                          {topicsRef.current?.open ? "Hide" : "Show"}
-                        </Button>
-                      </div>
-                    </summary>
-                    <div className="p-4 border-t">
-                      <p className="text-sm md:text-base text-muted-foreground">
-                        {currentDay.topics}
-                      </p>
-                    </div>
-                  </details>
+              {currentDay.notes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg md:text-xl">Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap">
+                      {currentDay.notes}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
-                  {/* Dropdown sections for MCQs */}
-                  <details 
-                    ref={mcqsRef}
-                    className={cn(
-                      "rounded-md border mb-4 bg-background",
-                      !isMCQsEnabled(currentDay.day) && "opacity-80"
-                    )}
-                  >
-                    <summary className={cn(
-                      "flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none",
-                      !isMCQsEnabled(currentDay.day) && "cursor-not-allowed"
-                    )}>
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg md:text-xl">Quiz Questions</CardTitle>
-                          {!isMCQsEnabled(currentDay.day) && <Lock className="h-4 w-4 text-muted-foreground" />}
-                          {isMCQsEnabled(currentDay.day) && <Unlock className="h-4 w-4 text-green-500" />}
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          type="button"
-                          disabled={!isMCQsEnabled(currentDay.day)}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (isMCQsEnabled(currentDay.day)) {
-                              toggleDetails(mcqsRef);
-                            }
-                          }}
-                        >
-                          {mcqsRef.current?.open ? "Hide" : "Show"}
-                        </Button>
-                      </div>
-                    </summary>
-                    {isMCQsEnabled(currentDay.day) && (
-                      <div className="p-4 border-t">
-                        {currentDay.mcqs && currentDay.mcqs.length > 0 ? (
-                          <div className="space-y-4">
-                            <p className="text-sm text-muted-foreground mb-4">
-                              Take this quiz to test your understanding of the material covered in today's lesson.
-                            </p>
-                            {!quizCompleted.includes(currentDay.day) ? (
-                              <Button 
-                                onClick={() => setShowQuiz(true)}
-                                className="w-full"
-                              >
-                                Start Quiz ({currentDay.mcqs.length} questions)
-                              </Button>
-                            ) : (
-                              <>
-                                <div className="flex items-center justify-center gap-2 text-green-500">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <span>You've completed this quiz</span>
-                                </div>
-                                {quizResults[currentDay.day] && (
-                                  <QuizResultsDisplay results={quizResults[currentDay.day]} />
-                                )}
-                                <Button 
-                                  variant="outline"
-                                  onClick={() => setShowQuiz(true)}
-                                  className="w-full mt-4"
-                                >
-                                  Retake Quiz
-                                </Button>
-                              </>
-                            )}
-                          </div>
+              {/* Dropdown sections for Transcript */}
+              <details ref={transcriptRef} className="rounded-md border mb-4 bg-background">
+                <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none">
+                  <div className="flex items-center justify-between w-full">
+                    <CardTitle className="text-lg md:text-xl">Video Transcript</CardTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleDetails(transcriptRef);
+                      }}
+                    >
+                      {transcriptRef.current?.open ? "Hide" : "Show"}
+                    </Button>
+                  </div>
+                </summary>
+                <div className="p-4 border-t">
+                  {currentDay.transcript ? (
+                    <p className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap">
+                      {currentDay.transcript}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No transcript available for this video.</p>
+                  )}
+                </div>
+              </details>
+
+              {/* Dropdown sections for Topics */}
+              <details ref={topicsRef} className="rounded-md border mb-4 bg-background">
+                <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none">
+                  <div className="flex items-center justify-between w-full">
+                    <CardTitle className="text-lg md:text-xl">Topics Covered</CardTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleDetails(topicsRef);
+                      }}
+                    >
+                      {topicsRef.current?.open ? "Hide" : "Show"}
+                    </Button>
+                  </div>
+                </summary>
+                <div className="p-4 border-t">
+                  <p className="text-sm md:text-base text-muted-foreground">
+                    {currentDay.topics}
+                  </p>
+                </div>
+              </details>
+
+              {/* Dropdown sections for MCQs */}
+              <details 
+                ref={mcqsRef}
+                className={cn(
+                  "rounded-md border mb-4 bg-background",
+                  !isMCQsEnabled(currentDay.day) && "opacity-80"
+                )}
+              >
+                <summary className={cn(
+                  "flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none",
+                  !isMCQsEnabled(currentDay.day) && "cursor-not-allowed"
+                )}>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg md:text-xl">Quiz Questions</CardTitle>
+                      {!isMCQsEnabled(currentDay.day) && <Lock className="h-4 w-4 text-muted-foreground" />}
+                      {isMCQsEnabled(currentDay.day) && <Unlock className="h-4 w-4 text-green-500" />}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      type="button"
+                      disabled={!isMCQsEnabled(currentDay.day)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (isMCQsEnabled(currentDay.day)) {
+                          toggleDetails(mcqsRef);
+                        }
+                      }}
+                    >
+                      {mcqsRef.current?.open ? "Hide" : "Show"}
+                    </Button>
+                  </div>
+                </summary>
+                {isMCQsEnabled(currentDay.day) && (
+                  <div className="p-4 border-t">
+                    {currentDay.mcqs && currentDay.mcqs.length > 0 ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Take this quiz to test your understanding of the material covered in today's lesson.
+                        </p>
+                        {!quizCompleted.includes(currentDay.day) ? (
+                          <Button 
+                            onClick={() => setShowQuiz(true)}
+                            className="w-full"
+                          >
+                            Start Quiz ({currentDay.mcqs.length} questions)
+                          </Button>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">No quiz questions available for this lesson.</p>
+                          <>
+                            <div className="flex items-center justify-center gap-2 text-green-500">
+                              <CheckCircle className="h-4 w-4" />
+                              <span>You've completed this quiz</span>
+                            </div>
+                            {quizResults[currentDay.day] && (
+                              <QuizResultsDisplay results={quizResults[currentDay.day]} />
+                            )}
+                            <Button 
+                              variant="outline"
+                              onClick={() => setShowQuiz(true)}
+                              className="w-full mt-4"
+                            >
+                              Retake Quiz
+                            </Button>
+                          </>
                         )}
                       </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No quiz questions available for this lesson.</p>
                     )}
-                  </details>
-
-                  <Button
-                    onClick={() => handleDayComplete(currentDay.day)}
-                    variant="default"
-                    className={cn(
-                      "w-full",
-                      completedDays.includes(currentDay.day)
-                        ? "bg-green-500 hover:bg-green-600 text-white"
-                        : "bg-primary text-primary-foreground hover:bg-primary/90"
-                    )}
-                  >
-                    {completedDays.includes(currentDay.day)
-                      ? "Mark as Incomplete"
-                      : "Mark as Complete"}
-                  </Button>
-                </>
-              )}
+                  </div>
+                )}
+              </details>
             </div>
           )}
         </div>
