@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 import { useCourseDetails } from '@/services/courseService';
@@ -23,6 +23,10 @@ const CourseDetails = () => {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { data: course, isLoading, isError } = useCourseDetails(courseId);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleEnroll = () => {
     if (!isAuthenticated) {
@@ -152,7 +156,6 @@ const CourseDetails = () => {
                   className="w-full h-auto object-cover rounded-lg mb-4"
                 />
                 
-                {/* Price Section */}
                 <div className="mb-6">
                   
                   
