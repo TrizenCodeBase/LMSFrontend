@@ -1,4 +1,3 @@
-
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import AboutSection from "@/components/AboutSection";
@@ -22,7 +21,7 @@ const Index = () => {
   const { toast } = useToast();
   
   const handleCourseClick = (courseId: string) => {
-    navigate(`/course/${courseId}`);
+    navigate(`/course/${courseId}/details`);
   };
   
   const handleEnrollClick = (courseId: string) => {
@@ -50,6 +49,7 @@ const Index = () => {
           onEnrollClick={handleEnrollClick}
           onStartClick={() => {}}
           onResumeClick={() => {}}
+          hideEnrollButton={true}
         />
         <WhyChooseUsSection />
         <TestimonialsCarousel />

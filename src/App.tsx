@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import ExploreCourses from "./pages/ExploreCourses";
 import CourseEnrollment from "./pages/CourseEnrollment";
+import CourseDetails from "./pages/CourseDetails";
 import CourseWeekView from "./pages/CourseWeekView";
 import CoursePayment from "./pages/CoursePayment";
 import NotFound from "./pages/NotFound";
@@ -153,6 +154,9 @@ const AppRoutes = () => (
       <ProtectedRoute>
         <CourseEnrollment />
       </ProtectedRoute>
+    } />
+    <Route path="/course/:courseId/details" element={
+      <CourseDetails />
     } />
     <Route path="/course/:courseId/payment" element={
       <ProtectedRoute>
