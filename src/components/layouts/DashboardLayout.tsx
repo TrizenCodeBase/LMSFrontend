@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, FileText, Calendar, 
   MessageSquare, GraduationCap, UserCircle, 
@@ -19,6 +19,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  courseTitle?: string;
 }
 
 // User Menu Component
@@ -83,11 +84,12 @@ const UserMenu = ({ user, onLogout }: { user: any; onLogout: () => void }) => {
   );
 };
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -113,12 +115,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
               <Menu className="h-5 w-5" />
             </Button>
-            <Link to="/" className="ml-2">
+            <Link to="/" className="ml-2 flex items-center gap-4">
               <img 
                 src="/lovable-uploads/b66cad1a-9e89-49b0-a481-bbbb0a2bbded.png" 
                 alt="Trizen Logo" 
                 className="h-10" 
               />
+              {location.pathname.includes('/course/') && courseTitle && (
+                <div className="hidden sm:block font-medium text-sm truncate max-w-[200px]">
+                  {courseTitle}
+                </div>
+              )}
             </Link>
           </div>
           <div className="flex items-center gap-2">
@@ -204,7 +211,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Main Content Area */}
       <main className={`flex-1 min-h-screen ${collapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         {/* Desktop Header */}
-        <div className="sticky top-0 z-10 h-16 border-b bg-white shadow hidden lg:flex items-center justify-end px-6">
+        <div className="sticky top-0 z-10 h-16 border-b bg-white shadow hidden lg:flex items-center justify-between px-6">
+          <div className="flex items-center gap-4">
+            {location.pathname.includes('/course/') && courseTitle && (
+              <div className="font-medium text-base">
+                {courseTitle}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-4">
             <NotificationBell />
             <UserMenu user={user} onLogout={handleLogout} />
