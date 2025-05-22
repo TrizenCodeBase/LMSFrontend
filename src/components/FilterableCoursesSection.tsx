@@ -10,6 +10,7 @@ interface FilterableCoursesSectionProps {
   onEnrollClick?: (courseId: string) => void;
   onStartClick?: (courseId: string) => void;
   onResumeClick?: (courseId: string) => void;
+  hideEnrollButton?: boolean;
 }
 
 // Course categories
@@ -32,7 +33,8 @@ const FilterableCoursesSection = ({
   onCourseClick,
   onEnrollClick,
   onStartClick,
-  onResumeClick
+  onResumeClick,
+  hideEnrollButton = false
 }: FilterableCoursesSectionProps) => {
   const [activeCategory, setActiveCategory] = useState("all");
 
@@ -92,7 +94,7 @@ const FilterableCoursesSection = ({
               enrollmentStatus={course.status || course.enrollmentStatus}
               instructor={course.instructor}
               onClick={() => onCourseClick && onCourseClick(course._id)}
-              onEnrollClick={onEnrollClick ? () => onEnrollClick(course._id) : undefined}
+              onEnrollClick={!hideEnrollButton && onEnrollClick ? () => onEnrollClick(course._id) : undefined}
               onStartClick={onStartClick ? () => onStartClick(course._id) : undefined}
               onResumeClick={onResumeClick ? () => onResumeClick(course._id) : undefined}
             />
