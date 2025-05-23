@@ -720,7 +720,7 @@ const EnrollmentRequests = () => {
                                       </span>
                                       <span className="flex items-center gap-1.5">
                                         <Mail className="h-3 w-3" />
-                                        <span className="truncate">{request.email}</span>
+                                        <span className="truncate">{request.userId?.email || request.email}</span>
                                       </span>
                                       <span className="flex items-center gap-1.5">
                                         <Phone className="h-3 w-3" />
