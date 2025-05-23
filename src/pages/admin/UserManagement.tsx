@@ -203,7 +203,8 @@ const UserManagement = () => {
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
     
-    return matchesSearch && matchesRole && matchesStatus;
+    // Exclude admin users
+    return matchesSearch && matchesRole && matchesStatus && user.role !== 'admin';
   });
 
   const getStatusBadge = (status: string) => {
@@ -261,7 +262,6 @@ const UserManagement = () => {
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="instructor">Instructor</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
               
