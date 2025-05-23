@@ -16,6 +16,7 @@ interface RoadmapDay {
   duration?: string;
   description?: string;
   completed?: boolean;
+  day: number;
 }
 
 interface Course {
@@ -40,6 +41,8 @@ interface Course {
   roadmap?: RoadmapDay[];
   content?: any[];
   skills?: string[];
+  progress?: number;
+  image?: string;
 }
 
 interface EnrollFormProps {
@@ -62,7 +65,7 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      queryClient.invalidateQueries(['course', courseId]);
+      queryClient.invalidateQueries({ queryKey: ['course', courseId] });
     }
   }, [isAuthenticated, courseId, queryClient]);
 
@@ -164,6 +167,19 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   const isUserEnrolled = isAuthenticated && course?.enrollmentStatus && 
     ['enrolled', 'started', 'completed'].includes(course.enrollmentStatus);
 
+  // Helper function to check if all uploaded days are completed
+  const allUploadedDaysCompleted = () => {
+    if (!course?.roadmap || !course?.progress) return false;
+    return course.progress === 100;
+  };
+
+  // Helper function to check if all course duration days are completed
+  const allCourseDaysCompleted = () => {
+    if (!course?.duration || !course?.roadmap) return false;
+    const totalDurationDays = parseInt(course.duration.split(' ')[0]); // Assuming duration is in format "X days"
+    return course.roadmap.length === totalDurationDays && course.progress === 100;
+  };
+
   if (!isAuthenticated) {
     actionButton = (
       <Button 
@@ -185,6 +201,40 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
         {enrollMutation.isPending ? "Enrolling..." : "Enroll Now"}
       </Button>
     );
+  } else if (allCourseDaysCompleted()) {
+    actionButton = (
+      <div className="space-y-2">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+          <p className="text-green-700 text-sm font-medium">
+            🎉 Congratulations! You've completed the course!
+          </p>
+        </div>
+        <Button 
+          size="lg" 
+          onClick={handleResumeCourse} 
+          className="mb-4 w-full bg-green-600 hover:bg-green-700"
+        >
+          View Course
+        </Button>
+      </div>
+    );
+  } else if (allUploadedDaysCompleted()) {
+    actionButton = (
+      <div className="space-y-2">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+          <p className="text-blue-700 text-sm">
+            You've completed all available content! More content will be added soon.
+          </p>
+        </div>
+        <Button 
+          size="lg" 
+          onClick={handleResumeCourse} 
+          className="mb-4 w-full bg-blue-600 hover:bg-blue-700"
+        >
+          Resume Course
+        </Button>
+      </div>
+    );
   } else if (course?.enrollmentStatus === 'enrolled' || course?.enrollmentStatus === 'started') {
     actionButton = (
       <Button 
@@ -194,12 +244,6 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
       >
         Resume Course
       </Button>
-    );
-  } else if (course?.enrollmentStatus === 'completed') {
-    actionButton = (
-      <Badge className="mb-4 text-lg py-2 px-4 bg-green-600 w-full flex justify-center">
-        Course Completed
-      </Badge>
     );
   }
 

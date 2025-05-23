@@ -16,12 +16,11 @@ import { Badge } from "@/components/ui/badge";
 interface Message {
   id: string;
   content: string;
-  sender: {
-    id: string;
-    name: string;
-    role: 'instructor' | 'student';
-  };
+  senderId: string;
+  senderName: string;
+  senderRole: 'instructor' | 'student';
   timestamp: Date;
+  courseId: string;
 }
 
 interface Event {
@@ -41,9 +40,22 @@ const Dashboard = () => {
   const sendMessageMutation = useSendMessage();
   const [selectedDate] = useState<Date>(new Date());
 
+  // Calculate progress for a single course
+  const calculateCourseProgress = (course: any) => {
+    if (!course.duration || !course.roadmap) return course.progress || 0;
+    const totalDurationDays = parseInt(course.duration.split(' ')[0]);
+    const availableDays = course.roadmap.length;
+    const completedDays = Math.ceil(((course.progress || 0) / 100) * availableDays);
+    
+    // Calculate progress based on completed days relative to total duration
+    return Math.min(100, Math.round((completedDays / totalDurationDays) * 100));
+  };
+
+  // Calculate total progress across all courses
   const totalProgress = enrolledCourses?.length
     ? Math.round(
-        enrolledCourses.reduce((sum, course) => sum + (course.progress || 0), 0) / enrolledCourses.length
+        enrolledCourses.reduce((sum, course) => sum + calculateCourseProgress(course), 0) / 
+        enrolledCourses.length
       )
     : 0;
 
@@ -51,7 +63,7 @@ const Dashboard = () => {
   const messagesByCourse = React.useMemo(() => {
     if (!messages) return {};
     return messages.reduce((acc: Record<string, Message[]>, message) => {
-      const courseId = message.sender.id; // Using sender ID as course ID for now
+      const courseId = message.courseId;
       if (!acc[courseId]) acc[courseId] = [];
       acc[courseId].push(message);
       return acc;
@@ -88,7 +100,8 @@ const Dashboard = () => {
     
     try {
       await sendMessageMutation.mutateAsync({
-        instructorId: user.id,
+        receiverId: user.id,
+        courseId: '', // Add the appropriate courseId
         content,
       });
     } catch (error) {
@@ -145,7 +158,11 @@ const Dashboard = () => {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Completed Courses</p>
                   <h3 className="text-2xl font-bold mt-1">
-                    {enrolledCourses?.filter(course => course.progress === 100).length || 0}
+                    {enrolledCourses?.filter(course => 
+                      course.progress === 100 && 
+                      (!course.duration || 
+                        parseInt(course.duration.split(' ')[0]) <= (course.roadmap?.length || 0))
+                    ).length || 0}
                   </h3>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
@@ -201,32 +218,56 @@ const Dashboard = () => {
                 )}
                 <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-4">
-                    {enrolledCourses?.map((course) => (
-                      <Card 
-                        key={course.id} 
-                        className="p-4 hover:shadow-md transition-all cursor-pointer border-l-4 hover:border-l-primary"
-                        onClick={() => handleCourseClick(course._id || course.id)}
-                      >
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                              <h3 className="font-medium text-lg">{course.title}</h3>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Users className="h-4 w-4" />
-                                <span>Instructor: {course.instructor}</span>
+                    {enrolledCourses?.map((course) => {
+                      // Calculate progress based on course duration
+                      const calculateProgress = () => {
+                        if (!course.duration || !course.roadmap) return course.progress || 0;
+                        const totalDurationDays = parseInt(course.duration.split(' ')[0]);
+                        const availableDays = course.roadmap.length;
+                        const completedDays = Math.ceil(((course.progress || 0) / 100) * availableDays);
+                        
+                        // Calculate progress based on completed days relative to total duration
+                        return Math.min(100, Math.round((completedDays / totalDurationDays) * 100));
+                      };
+
+                      const actualProgress = calculateProgress();
+                      const isFullyComplete = (course.progress === 100) && 
+                        (!course.duration || parseInt(course.duration.split(' ')[0]) <= (course.roadmap?.length || 0));
+
+                      return (
+                        <Card 
+                          key={course.id} 
+                          className="p-4 hover:shadow-md transition-all cursor-pointer border-l-4 hover:border-l-primary"
+                          onClick={() => handleCourseClick(course._id || course.id)}
+                        >
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-1">
+                                <h3 className="font-medium text-lg">{course.title}</h3>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Users className="h-4 w-4" />
+                                  <span>Instructor: {course.instructor}</span>
+                                </div>
                               </div>
+                              <Badge variant={isFullyComplete ? "outline" : "secondary"}>
+                                {actualProgress}% Complete
+                              </Badge>
                             </div>
-                            <Badge variant={course.progress === 100 ? "outline" : "secondary"}>
-                              {course.progress}% Complete
-                            </Badge>
+                            <div className="space-y-1">
+                              <Progress 
+                                value={actualProgress} 
+                                className={`h-2 ${isFullyComplete ? "bg-green-100" : ""}`}
+                              />
+                              {course.progress === 100 && !isFullyComplete && (
+                                <p className="text-xs text-blue-600">
+                                  All available content completed
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <Progress 
-                            value={course.progress} 
-                            className={`h-2 ${course.progress === 100 ? "bg-green-100" : ""}`}
-                          />
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </CardContent>

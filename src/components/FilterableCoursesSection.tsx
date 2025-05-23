@@ -93,6 +93,7 @@ const FilterableCoursesSection = ({
               progress={course.progress}
               enrollmentStatus={course.status || course.enrollmentStatus}
               instructor={course.instructor}
+              roadmap={course.roadmap}
               onClick={() => onCourseClick && onCourseClick(course._id)}
               onEnrollClick={!hideEnrollButton && onEnrollClick ? () => onEnrollClick(course._id) : undefined}
               onStartClick={onStartClick ? () => onStartClick(course._id) : undefined}

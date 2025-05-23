@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
@@ -153,6 +152,7 @@ const Courses = () => {
                       onClick={() => handleCourseClick(course._id)}
                       onStartClick={course.status === 'enrolled' ? () => handleStartClick(course._id) : undefined}
                       onResumeClick={course.status === 'started' ? () => handleResumeClick(course._id) : undefined}
+                      roadmap={course.roadmap}
                     />
                   ))}
                 </div>

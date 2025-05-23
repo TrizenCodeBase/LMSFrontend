@@ -20,6 +20,7 @@ interface CourseCardProps {
   onStartClick?: (e: React.MouseEvent) => void;
   onResumeClick?: (e: React.MouseEvent) => void;
   instructor?: string;
+  roadmap?: { day: number; topics: string }[];
 }
 
 const CourseCard = ({
@@ -32,12 +33,13 @@ const CourseCard = ({
   students,
   level,
   onClick,
-  progress,
+  progress = 0,
   enrollmentStatus,
   onEnrollClick,
   onStartClick,
   onResumeClick,
-  instructor
+  instructor,
+  roadmap = []
 }: CourseCardProps) => {
   
   // Handle button clicks without propagating to the card
@@ -45,6 +47,33 @@ const CourseCard = ({
     e.stopPropagation();
     if (callback) callback(e);
   };
+  
+  // Calculate progress based on course duration
+  const calculateProgress = () => {
+    if (!duration || !roadmap) return progress;
+    const totalDurationDays = parseInt(duration.split(' ')[0]); // Assuming duration is in format "X days"
+    const availableDays = roadmap.length;
+    const completedDays = Math.ceil((progress / 100) * availableDays); // Calculate actual completed days
+    
+    // Calculate progress based on completed days relative to total duration
+    const progressBasedOnDuration = Math.min(100, Math.round((completedDays / totalDurationDays) * 100));
+    
+    // If all available content is completed but there are more days than duration
+    if (progress === 100) {
+      if (availableDays > totalDurationDays) {
+        // Show progress based on total duration days
+        return 100;
+      }
+      // If we have fewer days than duration, show progress based on completed days
+      return progressBasedOnDuration;
+    }
+    
+    // If not all content is completed, show progress based on completed days
+    return progressBasedOnDuration;
+  };
+
+  const actualProgress = calculateProgress();
+  const isFullyComplete = progress === 100 && (!duration || parseInt(duration.split(' ')[0]) <= roadmap.length);
   
   return (
     <Card 
@@ -57,6 +86,14 @@ const CourseCard = ({
           alt={title} 
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 hover:scale-105"
         />
+        {isFullyComplete && (
+          <div className="absolute top-2 right-2">
+            <Badge className="bg-green-600 text-white">
+              <Check className="h-3 w-3 mr-1" />
+              Completed
+            </Badge>
+          </div>
+        )}
       </div>
       
       <CardHeader className="flex-1">
@@ -140,14 +177,21 @@ const CourseCard = ({
               <div className="flex-1">
                 <div className="flex justify-between text-xs mb-1">
                   <span>Progress</span>
-                  <span>{progress || 0}%</span>
+                  <span>{actualProgress}%</span>
                 </div>
                 <div className="w-full bg-secondary h-2 rounded-full">
                   <div 
-                    className="bg-primary h-2 rounded-full" 
-                    style={{ width: `${progress || 0}%` }}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      isFullyComplete ? 'bg-green-600' : 'bg-primary'
+                    }`}
+                    style={{ width: `${actualProgress}%` }}
                   ></div>
                 </div>
+                {progress === 100 && !isFullyComplete && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    All available content completed
+                  </p>
+                )}
               </div>
 
               {enrollmentStatus === 'enrolled' && onStartClick && (
@@ -172,14 +216,12 @@ const CourseCard = ({
                 </Button>
               )}
               
-              {enrollmentStatus === 'completed' && (
+              {isFullyComplete ? (
                 <Badge className="px-3 py-1 rounded-full bg-green-600 text-white flex items-center gap-1">
                   <Check className="h-3 w-3" />
                   Completed
                 </Badge>
-              )}
-              
-              {enrollmentStatus === 'pending' && (
+              ) : enrollmentStatus === 'pending' && (
                 <Badge className="px-3 py-1 rounded-full bg-yellow-600 text-white flex items-center gap-1">
                   <span className="h-2 w-2 bg-white rounded-full animate-pulse mr-1"></span>
                   Pending
