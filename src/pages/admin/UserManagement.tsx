@@ -44,6 +44,7 @@ import { TableLoader } from '@/components/loaders';
 interface User {
   _id: string;
   id?: string;
+  userId: string;
   name: string;
   email: string;
   role: string;
@@ -197,7 +198,6 @@ const UserManagement = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    if (user.role === 'admin') return false;
     const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
@@ -261,6 +261,7 @@ const UserManagement = () => {
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="instructor">Instructor</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -283,9 +284,10 @@ const UserManagement = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>User ID</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
-                    {/* <TableHead>Status</TableHead> */}
+                    <TableHead>Status</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Last Active</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -293,10 +295,10 @@ const UserManagement = () => {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableLoader colSpan={7} message="Loading users..." />
+                    <TableLoader colSpan={8} message="Loading users..." />
                   ) : error ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center text-red-500">
+                      <TableCell colSpan={8} className="h-24 text-center text-red-500">
                         <div className="flex justify-center items-center">
                           <AlertTriangle className="h-6 w-6 mr-2" />
                           <span>Failed to load users. Please try again.</span>
@@ -305,59 +307,64 @@ const UserManagement = () => {
                     </TableRow>
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                         No users found matching the current filters.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredUsers.map((user) => (
                       <TableRow key={user._id || user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell className="capitalize">{user.role}</TableCell>
-                      {/* <TableCell>{getStatusBadge(user.status)}</TableCell> */}
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono">
+                            {user.userId || 'N/A'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell className="capitalize">{user.role}</TableCell>
+                        <TableCell>{getStatusBadge(user.status)}</TableCell>
                         <TableCell>{formatDate(user.createdAt)}</TableCell>
                         <TableCell>{formatDate(user.lastActive)}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleUserAction('View', user)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUserAction('Edit', user)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleUserAction('View', user)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUserAction('Edit', user)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                            {user.status !== 'suspended' ? (
-                              <DropdownMenuItem onClick={() => handleUserAction('Suspend', user)}>
-                                <Ban className="mr-2 h-4 w-4" />
-                                Suspend
+                              {user.status !== 'suspended' ? (
+                                <DropdownMenuItem onClick={() => handleUserAction('Suspend', user)}>
+                                  <Ban className="mr-2 h-4 w-4" />
+                                  Suspend
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem onClick={() => handleUserAction('Activate', user)}>
+                                  <UserCheck className="mr-2 h-4 w-4" />
+                                  Activate
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => handleUserAction('Delete', user)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
                               </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onClick={() => handleUserAction('Activate', user)}>
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Activate
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem 
-                              onClick={() => handleUserAction('Delete', user)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
                 </TableBody>
