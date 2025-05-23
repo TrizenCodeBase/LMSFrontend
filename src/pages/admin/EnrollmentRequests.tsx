@@ -43,7 +43,7 @@ interface EnrollmentRequest {
   email: string;
   mobile: string;
   courseName: string;
-  utrNumber: string;
+  transactionId: string;
   transactionScreenshot: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
@@ -573,7 +573,7 @@ const EnrollmentRequests = () => {
                     <div className="relative flex items-center">
                       <Search className="absolute left-3 h-4 w-4 text-muted-foreground/70 group-hover:text-primary group-focus-within:text-primary transition-colors" />
                       <Input 
-                        placeholder="Search by email, course, or UTR..." 
+                        placeholder="Search by email, course, or Transaction ID..." 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-9 pr-12 h-10 bg-white/50 hover:bg-white focus:bg-white transition-colors border-muted-foreground/20 hover:border-primary/50 focus:border-primary"
@@ -672,7 +672,7 @@ const EnrollmentRequests = () => {
                               <TableHead className="w-[150px]">
                                 <div className="flex items-center gap-2">
                                   <CreditCard className="h-4 w-4 text-primary" />
-                                  UTR
+                                  Transaction ID
                                 </div>
                               </TableHead>
                               <TableHead className="w-[120px]">Status</TableHead>
@@ -734,7 +734,7 @@ const EnrollmentRequests = () => {
                                     {request.courseName}
                                   </div>
                                 </TableCell>
-                                <TableCell className="py-3">{request.utrNumber}</TableCell>
+                                <TableCell className="py-3">{request.transactionId}</TableCell>
                                 <TableCell className="py-3">{getStatusBadge(request.status)}</TableCell>
                                 <TableCell className="py-3">
                         <Button 

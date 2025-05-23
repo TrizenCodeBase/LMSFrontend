@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -18,10 +17,12 @@ import { useToast } from "@/hooks/use-toast";
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   mobile: z.string()
-    .min(10, { message: "Mobile number must be at least 10 digits" })
-    .max(15, { message: "Mobile number can't be longer than 15 digits" })
+    .length(10, { message: "Mobile number must be exactly 10 digits" })
     .regex(/^[0-9]+$/, { message: "Mobile number can only contain digits" }),
-  utrNumber: z.string().min(1, { message: "UTR number is required" }),
+  transactionId: z.string()
+    .min(10, { message: "Transaction ID must be at least 10 characters" })
+    .max(30, { message: "Transaction ID can't be longer than 30 characters" })
+    .regex(/^[a-zA-Z0-9]+$/, { message: "Transaction ID can only contain letters and numbers" }),
   transactionScreenshot: z.instanceof(FileList).refine(
     (files) => files.length === 1,
     "Please upload a transaction screenshot"
@@ -44,7 +45,7 @@ const PaymentForm = () => {
     defaultValues: {
       email: user?.email || "",
       mobile: "",
-      utrNumber: "",
+      transactionId: "",
     },
   });
 
@@ -68,7 +69,7 @@ const PaymentForm = () => {
       const formData = new FormData();
       formData.append("email", data.email);
       formData.append("mobile", data.mobile);
-      formData.append("utrNumber", data.utrNumber);
+      formData.append("transactionId", data.transactionId);
       formData.append("courseName", course.title);
       formData.append("courseId", courseId);
       formData.append("transactionScreenshot", data.transactionScreenshot[0]);
@@ -85,11 +86,12 @@ const PaymentForm = () => {
       });
       
       navigate("/my-courses");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting enrollment request:", error);
+      const errorMessage = error.response?.data?.message || "There was a problem submitting your enrollment request. Please try again.";
       toast({
         title: "Submission failed",
-        description: "There was a problem submitting your enrollment request. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -178,14 +180,14 @@ const PaymentForm = () => {
               
               <FormField
                 control={form.control}
-                name="utrNumber"
+                name="transactionId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm sm:text-base">UTR Number</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">Transaction ID</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
-                        placeholder="Enter transaction UTR number"
+                        placeholder="Enter transaction ID"
                         className="h-9 sm:h-10"
                       />
                     </FormControl>
