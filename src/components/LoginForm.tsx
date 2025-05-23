@@ -10,12 +10,13 @@ import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -93,7 +94,6 @@ const LoginForm = () => {
                   <FormLabel>Password</FormLabel>
                   <Button 
                     type="button"
-
                     variant="link" 
                     className="px-0 text-sm font-semibold text-primary"
                     onClick={() => navigate('/forgot-password')}
@@ -104,7 +104,24 @@ const LoginForm = () => {
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                    <Input type="password" className="pl-10" {...field} />
+                    <Input 
+                      type={showPassword ? "text" : "password"} 
+                      className="pl-10 pr-10" 
+                      {...field} 
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </Button>
                   </div>
                 </FormControl>
                 <FormMessage />
