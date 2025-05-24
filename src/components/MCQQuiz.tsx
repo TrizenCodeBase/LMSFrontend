@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -14,10 +13,11 @@ import { useToast } from '@/hooks/use-toast';
 interface MCQQuizProps {
   questions: MCQQuestion[];
   onComplete: (score: number) => void;
-  dayNumber: number;
+  onCancel: () => void;
+  dayNumber?: number;
 }
 
-const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, dayNumber }) => {
+const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayNumber }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptionIndices, setSelectedOptionIndices] = useState<number[]>(Array(questions.length).fill(-1));
   const [showResults, setShowResults] = useState(false);
@@ -221,6 +221,14 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, dayNumber }) =
               {currentQuestionIndex === questions.length - 1 ? "Finish Quiz" : "Next Question"}
             </Button>
           )}
+        </div>
+        <div className="flex gap-4 justify-end">
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button onClick={handleNextQuestion}>
+            Submit Quiz
+          </Button>
         </div>
       </CardFooter>
     </Card>

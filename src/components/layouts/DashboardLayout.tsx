@@ -122,7 +122,7 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
                 className="h-10" 
               />
               {location.pathname.includes('/course/') && courseTitle && (
-                <div className="hidden sm:block font-medium text-sm truncate max-w-[200px]">
+                <div className="hidden sm:block font-bold text-lg truncate max-w-[200px]">
                   {courseTitle}
                 </div>
               )}
@@ -214,7 +214,7 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
         <div className="sticky top-0 z-10 h-16 border-b bg-white shadow hidden lg:flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
             {location.pathname.includes('/course/') && courseTitle && (
-              <div className="font-medium text-base">
+              <div className="font-bold text-xl">
                 {courseTitle}
               </div>
             )}

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Video, CheckCircle, AlertCircle, Menu, Lock, Unlock, Clock, ArrowRight, Loader2 } from "lucide-react";
+import { Video, CheckCircle, AlertCircle, Menu, Lock, Unlock, Clock, ArrowRight, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,12 @@ import Plyr from 'plyr-react';
 import 'plyr-react/plyr.css';
 import { CustomToast } from "@/components/ui/custom-toast";
 import { ToastAction } from '@/components/ui/toast';
+import { Textarea } from "@/components/ui/textarea";
+import React from 'react';
+import { debounce } from 'lodash-es';
+import RichTextEditor from '@/components/RichTextEditor';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Note, saveNote, getNotes, updateNote } from '@/services/notesService';
 
 // Import your logo image
 import companyLogo from '/logo_footer.png'; // Adjust path as needed
@@ -176,23 +182,23 @@ const VideoPlayer = ({
   return (
     <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
       <div ref={playerRef}>
-        <Plyr
-          source={{
-            type: 'video',
-            sources: [
-              {
-                src: videoUrl,
-                provider: 'html5'
-              }
-            ]
-          }}
-          options={{
-            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
-            settings: ['quality', 'speed'],
-            keyboard: { global: true }
-          }}
-          onEnded={onVideoComplete}
-        />
+      <Plyr
+        source={{
+          type: 'video',
+          sources: [
+            {
+              src: videoUrl,
+              provider: 'html5'
+            }
+          ]
+        }}
+        options={{
+          controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+          settings: ['quality', 'speed'],
+          keyboard: { global: true }
+        }}
+        onEnded={onVideoComplete}
+      />
       </div>
       {/* Logo overlay */}
       <div className="absolute top-2 md:top-4 z-5 flex items-center" style={{ right: '-3px' }}>
@@ -204,6 +210,9 @@ const VideoPlayer = ({
     </div>
   );
 };
+
+// Memoize the VideoPlayer component
+const MemoizedVideoPlayer = React.memo(VideoPlayer);
 
 const TranscriptSection = ({ transcript }: { transcript?: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -240,9 +249,9 @@ const TranscriptSection = ({ transcript }: { transcript?: string }) => {
 
 const QuizResultsDisplay = ({ results }: { results: QuizResults }) => {
   const getScoreColor = (score: number) => {
-    if (score >= 70) return "text-green-500";
-    if (score >= 50) return "text-yellow-500";
-    return "text-red-500";
+    if (score >= 70) return "text-secondary";
+    if (score >= 50) return "text-primary";
+    return "text-destructive";
   };
 
   return (
@@ -253,9 +262,9 @@ const QuizResultsDisplay = ({ results }: { results: QuizResults }) => {
             <h3 className="font-semibold">Quiz Results - Day {results.dayNumber}</h3>
             <Badge className={cn(
               "text-white",
-              results.score >= 70 ? "bg-green-500" : 
-              results.score >= 50 ? "bg-yellow-500" : 
-              "bg-red-500"
+              results.score >= 70 ? "bg-secondary" : 
+              results.score >= 50 ? "bg-primary" : 
+              "bg-destructive"
             )}>
               Score: {results.score}%
             </Badge>
@@ -294,6 +303,51 @@ const QuizResultsDisplay = ({ results }: { results: QuizResults }) => {
   );
 };
 
+// Memoized Notes component
+const NotesSection = React.memo(({ 
+  day, 
+  value, 
+  onChange,
+  onSave,
+  isSaving
+}: { 
+  day: number;
+  value: string;
+  onChange: (day: number, value: string) => void;
+  onSave: () => void;
+  isSaving: boolean;
+}) => (
+  <Card>
+    <CardContent className="p-4 md:p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Day {day} Notes</h3>
+        <Button 
+          onClick={onSave}
+          disabled={isSaving}
+          className="flex items-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              <span>Save Notes</span>
+            </>
+          )}
+        </Button>
+      </div>
+      <RichTextEditor
+        value={value || ''}
+        onChange={(newValue) => onChange(day, newValue)}
+        placeholder="Take notes while watching the video..."
+      />
+    </CardContent>
+  </Card>
+));
+
 const CourseWeekView = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const [selectedDay, setSelectedDay] = useState<number>(0);
@@ -302,21 +356,23 @@ const CourseWeekView = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState<number[]>([]);
-  const [contentSections, setContentSections] = useState<ContentSections>({
-    transcript: false,
-    topics: false,
-    mcqs: false
-  });
-  const { token, isAuthenticated, loading } = useAuth();
+  const [notes, setNotes] = useState<Record<number, { _id: string; content: string }>>({});
+  const { token, isAuthenticated, loading, user } = useAuth();
   const { toast } = useToast();
   const updateProgressMutation = useUpdateProgress();
   const navigate = useNavigate();
   const [quizResults, setQuizResults] = useState<Record<number, QuizResults>>({});
   const location = useLocation();
-  const transcriptRef = useRef<HTMLDetailsElement>(null);
-  const topicsRef = useRef<HTMLDetailsElement>(null);
-  const mcqsRef = useRef<HTMLDetailsElement>(null);
   const [isMarking, setIsMarking] = useState(false);
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [unsavedNotes, setUnsavedNotes] = useState<Record<number, string>>({});
+
+  // Remove unused refs and state
+  const [contentSections, setContentSections] = useState<ContentSections>({
+    transcript: false,
+    topics: false,
+    mcqs: false
+  });
 
   // Add function to extract number from duration
   const extractDurationDays = (duration: string): number => {
@@ -333,7 +389,6 @@ const CourseWeekView = () => {
 
     if (dayParam) {
       const day = parseInt(dayParam);
-      // Update selected day without triggering scroll
       setSelectedDay(day);
       
       if (startQuiz === 'true') {
@@ -370,11 +425,11 @@ const CourseWeekView = () => {
           setCompletedDays(course.completedDays);
         } else {
           // Otherwise calculate from progress
-          const completedCount = Math.round((course.progress * course.roadmap.length) / 100);
-          const newCompletedDays = Array.from({ length: completedCount }, (_, i) => i + 1);
-          setCompletedDays(newCompletedDays);
-        }
+        const completedCount = Math.round((course.progress * course.roadmap.length) / 100);
+        const newCompletedDays = Array.from({ length: completedCount }, (_, i) => i + 1);
+        setCompletedDays(newCompletedDays);
       }
+    }
     }
   }, [course]);
 
@@ -395,7 +450,7 @@ const CourseWeekView = () => {
   const handleDayComplete = async (day: number) => {
     try {
       setIsMarking(true);
-      
+    
       // Calculate new completed days
       let newCompletedDays: number[];
       if (completedDays.includes(day)) {
@@ -422,12 +477,12 @@ const CourseWeekView = () => {
         }
         newCompletedDays = [...completedDays, day];
       }
-
+      
       // Use course._id for the API call
       if (!course?._id) {
         throw new Error('Course ID not found');
       }
-
+      
       // Calculate progress percentage
       const progressPercentage = Math.round((newCompletedDays.length / (course?.roadmap.length || 1)) * 100);
       
@@ -437,7 +492,7 @@ const CourseWeekView = () => {
       } else if (progressPercentage === 100) {
         status = 'completed';
       }
-
+      
       // Make the API call
       const result = await updateProgressMutation.mutateAsync({
         courseId: course._id,
@@ -446,7 +501,7 @@ const CourseWeekView = () => {
         token,
         completedDays: newCompletedDays
       });
-
+      
       // Only update the state if the API call was successful
       if (result) {
         const wasCompleted = completedDays.includes(day);
@@ -464,20 +519,20 @@ const CourseWeekView = () => {
         }
         
         // Show appropriate toast message
-        toast({
-          description: (
-            <CustomToast 
+          toast({
+            description: (
+              <CustomToast 
               title="Progress Updated"
               description={wasCompleted 
                 ? "Day marked as incomplete. Subsequent days are now locked."
                 : "Day marked as complete. Moving to next day."}
               type={wasCompleted ? "info" : "success"}
-            />
-          ),
+              />
+            ),
           duration: 3000,
-          className: "p-0 bg-transparent border-0"
-        });
-      } else {
+            className: "p-0 bg-transparent border-0"
+          });
+        } else {
         throw new Error('Failed to update progress');
       }
 
@@ -613,12 +668,6 @@ const CourseWeekView = () => {
     }));
   };
 
-  const toggleDetails = (ref: React.RefObject<HTMLDetailsElement>) => {
-    if (ref.current) {
-      ref.current.open = !ref.current.open;
-    }
-  };
-
   const handleMarkComplete = async (day: number) => {
     await handleDayComplete(day);
     // Navigate to next day if available
@@ -627,6 +676,133 @@ const CourseWeekView = () => {
       setSelectedDay(nextDay.day);
     }
   };
+
+  // Load notes from database on component mount
+  useEffect(() => {
+    const loadNotes = async () => {
+      if (courseId && token) {
+        try {
+          const fetchedNotes = await getNotes(courseId, token);
+          const notesMap: Record<number, { _id: string; content: string }> = {};
+          fetchedNotes.forEach((note: Note) => {
+            notesMap[note.dayNumber] = {
+              _id: note._id!,
+              content: note.content
+            };
+          });
+          setNotes(notesMap);
+        } catch (error) {
+          console.error('Error loading notes:', error);
+          toast({
+            description: (
+              <CustomToast 
+                title="Error Loading Notes"
+                description="Failed to load your notes. Please try again later."
+                type="error"
+              />
+            ),
+            duration: 3000,
+            className: "p-0 bg-transparent border-0"
+          });
+        }
+      }
+    };
+
+    loadNotes();
+  }, [courseId, token, toast]);
+
+  // Save notes function
+  const saveNotes = async (day: number) => {
+    try {
+      setIsSavingNote(true);
+      const content = unsavedNotes[day] || notes[day]?.content || '';
+      
+      console.log('Attempting to save note:', {
+        day,
+        content,
+        courseId,
+        existingNoteId: notes[day]?._id
+      });
+
+      if (notes[day]?._id) {
+        // Update existing note
+        console.log('Updating existing note');
+        const updatedNote = await updateNote(notes[day]._id, content, token);
+        setNotes(prev => ({
+          ...prev,
+          [day]: {
+            _id: updatedNote._id,
+            content: updatedNote.content
+          }
+        }));
+      } else {
+        // Create new note
+        console.log('Creating new note');
+        const newNote = await saveNote({
+          courseId,
+          dayNumber: day,
+          content,
+          userId: user.id
+        }, token);
+        setNotes(prev => ({
+          ...prev,
+          [day]: {
+            _id: newNote._id,
+            content: newNote.content
+          }
+        }));
+      }
+
+      // Clear unsaved changes for this day
+      setUnsavedNotes(prev => {
+        const next = { ...prev };
+        delete next[day];
+        return next;
+      });
+
+      toast({
+        description: (
+          <CustomToast 
+            title="Success"
+            description="Notes saved successfully!"
+            type="success"
+          />
+        ),
+        duration: 3000,
+        className: "p-0 bg-transparent border-0"
+      });
+    } catch (error: any) {
+      console.error('Error saving note:', error);
+      toast({
+        description: (
+          <CustomToast 
+            title="Error Saving Note"
+            description={error.response?.data?.message || "Failed to save your note. Please try again."}
+            type="error"
+          />
+        ),
+        duration: 3000,
+        className: "p-0 bg-transparent border-0"
+      });
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  // Optimized notes change handler
+  const handleNotesChange = React.useCallback((day: number, value: string) => {
+    setUnsavedNotes(prev => ({
+      ...prev,
+      [day]: value
+    }));
+  }, []);
+
+  // Memoize the video complete callback
+  const handleVideoCompleteCallback = React.useCallback(() => {
+    if (course && selectedDay) {
+      handleVideoComplete(selectedDay);
+    }
+  }, [course, selectedDay]);
 
   const SidebarContent = () => {
     const totalDurationDays = course?.duration ? extractDurationDays(course.duration) : 0;
@@ -645,11 +821,11 @@ const CourseWeekView = () => {
               className={cn(
                 "flex flex-col w-full p-3 rounded-lg text-sm gap-1 transition-colors text-left",
                 selectedDay === day.day
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : isDayLocked(day.day)
                   ? "bg-gray-100 hover:bg-gray-200 cursor-not-allowed"
                   : "hover:bg-muted",
-                completedDays.includes(day.day) && selectedDay !== day.day && "text-green-500"
+                completedDays.includes(day.day) && selectedDay !== day.day && "text-primary"
               )}
             >
               <div className="flex items-center justify-between">
@@ -683,7 +859,7 @@ const CourseWeekView = () => {
                   "text-xs mt-1",
                   selectedDay === day.day 
                     ? "text-primary-foreground/80"
-                    : "text-blue-500"
+                    : "text-primary"
                 )}>
                   Quiz: {day.mcqs.length} questions
                 </div>
@@ -786,23 +962,23 @@ const CourseWeekView = () => {
                   </div>
                 </div>
 
+                {/* Video Card */}
                     <Card>
                       <CardContent className="p-4 md:p-6">
-                        <VideoPlayer 
+                    <MemoizedVideoPlayer 
                           videoUrl={currentDay.video} 
-                          onVideoComplete={() => handleVideoComplete(currentDay.day)}
+                      onVideoComplete={handleVideoCompleteCallback}
                           isEnabled={isVideoEnabled(currentDay.day)}
                         />
                       </CardContent>
                     </Card>
 
                 {/* Navigation and Mark Complete Buttons */}
-                <div className="flex items-center justify-end gap-4 mt-4 mb-6">
+                <div className="flex items-center justify-end gap-4 my-6">
                   <Button
                     onClick={() => handleDaySelect(currentDay.day - 1)}
                     variant="outline"
                     disabled={currentDay.day === 1}
-                    className="flex items-center gap-2 text-primary hover:text-primary hover:bg-primary/10"
                   >
                     <ArrowRight className="h-4 w-4 rotate-180" />
                     Previous
@@ -810,14 +986,10 @@ const CourseWeekView = () => {
 
                   <Button
                     onClick={() => handleDayComplete(currentDay.day)}
-                    variant="default"
                     disabled={isMarking}
                     className={cn(
-                      "flex items-center gap-2 relative transition-all duration-200 min-w-[180px] justify-center",
-                      completedDays.includes(currentDay.day)
-                        ? "bg-green-500 hover:bg-green-600 text-white"
-                        : "bg-primary text-primary-foreground hover:bg-primary/90",
-                      isMarking && "opacity-80 cursor-not-allowed"
+                      "flex items-center gap-2",
+                      isMarking && "opacity-50 cursor-not-allowed"
                     )}
                   >
                     {isMarking ? (
@@ -827,122 +999,79 @@ const CourseWeekView = () => {
                       </>
                     ) : (
                       <>
-                        <span>{completedDays.includes(currentDay.day) ? "Completed" : "Complete and Continue"}</span>
                         {completedDays.includes(currentDay.day) ? (
-                          <CheckCircle className="h-4 w-4 ml-2" />
+                          <>
+                            <span>Completed</span>
+                            <CheckCircle className="h-4 w-4" />
+                          </>
                         ) : (
+                          <>
+                            <span>Complete and Continue</span>
                           <ArrowRight className="h-4 w-4" />
+                          </>
                         )}
                       </>
                     )}
                   </Button>
                 </div>
 
-                    {currentDay.notes && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg md:text-xl">Notes</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap">
-                            {currentDay.notes}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    )}
+                {/* Tabbed Content */}
+                <Tabs defaultValue="notes" className="w-full">
+                  <TabsList className="w-full border-b justify-start rounded-none h-auto p-0 bg-transparent">
+                    <TabsTrigger 
+                      value="transcript" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                    >
+                      Transcript
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="notes" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                    >
+                      Notes
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="quiz" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                      disabled={!isMCQsEnabled(currentDay.day)}
+                    >
+                      Quiz
+                    </TabsTrigger>
+                  </TabsList>
 
-                {/* Dropdown sections for Transcript */}
-                <details ref={transcriptRef} className="rounded-md border mb-4 bg-background">
-                  <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none">
-                    <div className="flex items-center justify-between w-full">
-                          <CardTitle className="text-lg md:text-xl">Video Transcript</CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          toggleDetails(transcriptRef);
-                        }}
-                      >
-                        {transcriptRef.current?.open ? "Hide" : "Show"}
-                          </Button>
-                        </div>
-                  </summary>
-                  <div className="p-4 border-t">
+                  <TabsContent value="transcript" className="mt-4">
+                    <Card>
+                      <CardContent className="p-4 md:p-6">
                         {currentDay.transcript ? (
                           <p className="text-sm md:text-base text-muted-foreground whitespace-pre-wrap">
                             {currentDay.transcript}
                           </p>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">No transcript available for this video.</p>
+                          <p className="text-sm text-muted-foreground italic">
+                            No transcript available for this video.
+                          </p>
                         )}
-                  </div>
-                </details>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-                {/* Dropdown sections for Topics */}
-                <details ref={topicsRef} className="rounded-md border mb-4 bg-background">
-                  <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none">
-                    <div className="flex items-center justify-between w-full">
-                          <CardTitle className="text-lg md:text-xl">Topics Covered</CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          toggleDetails(topicsRef);
-                        }}
-                      >
-                        {topicsRef.current?.open ? "Hide" : "Show"}
-                          </Button>
-                        </div>
-                  </summary>
-                  <div className="p-4 border-t">
-                        <p className="text-sm md:text-base text-muted-foreground">
-                          {currentDay.topics}
-                        </p>
-                  </div>
-                </details>
+                  <TabsContent value="notes" className="mt-4">
+                    <NotesSection
+                      day={currentDay.day}
+                      value={unsavedNotes[currentDay.day] ?? notes[currentDay.day]?.content ?? ''}
+                      onChange={handleNotesChange}
+                      onSave={() => saveNotes(currentDay.day)}
+                      isSaving={isSavingNote}
+                    />
+                  </TabsContent>
 
-                {/* Dropdown sections for MCQs */}
-                <details 
-                  ref={mcqsRef}
-                      className={cn(
-                    "rounded-md border mb-4 bg-background",
-                        !isMCQsEnabled(currentDay.day) && "opacity-80"
-                  )}
-                    >
-                  <summary className={cn(
-                    "flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 list-none",
-                          !isMCQsEnabled(currentDay.day) && "cursor-not-allowed"
-                    )}>
-                    <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg md:text-xl">Quiz Questions</CardTitle>
-                            {!isMCQsEnabled(currentDay.day) && <Lock className="h-4 w-4 text-muted-foreground" />}
-                            {isMCQsEnabled(currentDay.day) && <Unlock className="h-4 w-4 text-green-500" />}
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                        type="button"
-                            disabled={!isMCQsEnabled(currentDay.day)}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (isMCQsEnabled(currentDay.day)) {
-                            toggleDetails(mcqsRef);
-                          }
-                        }}
-                      >
-                        {mcqsRef.current?.open ? "Hide" : "Show"}
-                          </Button>
-                        </div>
-                  </summary>
-                  {isMCQsEnabled(currentDay.day) && (
-                    <div className="p-4 border-t">
+                  <TabsContent value="quiz" className="mt-4">
+                    <Card>
+                      <CardContent className="p-4 md:p-6">
                       {currentDay.mcqs && currentDay.mcqs.length > 0 ? (
                           <div className="space-y-4">
+                            {!showQuiz ? (
+                              <>
                             <p className="text-sm text-muted-foreground mb-4">
                               Take this quiz to test your understanding of the material covered in today's lesson.
                             </p>
@@ -955,7 +1084,7 @@ const CourseWeekView = () => {
                             </Button>
                             ) : (
                               <>
-                                <div className="flex items-center justify-center gap-2 text-green-500">
+                                    <div className="flex items-center justify-center gap-2 text-secondary">
                                 <CheckCircle className="h-4 w-4" />
                                 <span>You've completed this quiz</span>
                               </div>
@@ -971,13 +1100,25 @@ const CourseWeekView = () => {
                                 </Button>
                               </>
                             )}
-                          </div>
+                              </>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">No quiz questions available for this lesson.</p>
+                              <MCQQuiz
+                                questions={currentDay.mcqs}
+                                onComplete={handleQuizComplete}
+                                onCancel={() => setShowQuiz(false)}
+                                dayNumber={currentDay.day}
+                              />
                         )}
                     </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">
+                            No quiz questions available for this lesson.
+                          </p>
                   )}
-                </details>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
           </div>
