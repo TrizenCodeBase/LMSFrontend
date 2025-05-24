@@ -39,7 +39,11 @@ interface EnrollmentRequest {
     email: string;
     userId: string;
   };
-  courseId: string;
+  courseId: {
+    _id: string;
+    title: string;
+    courseUrl: string;
+  };
   email: string;
   mobile: string;
   courseName: string;
@@ -728,12 +732,7 @@ const EnrollmentRequests = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-3">
-                                  {request.courseId?.title || 'Unknown Course'}
-                                  {request.courseUrl && (
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      {request.courseUrl}
-                                  </div>
-                                  )}
+                                  {request.courseId?.title || request.courseName || 'Unknown Course'}
                                 </TableCell>
                                 <TableCell className="py-3">{request.transactionId}</TableCell>
                                 <TableCell className="py-3">{getStatusBadge(request.status)}</TableCell>
