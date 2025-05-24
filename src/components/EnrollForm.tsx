@@ -35,6 +35,7 @@ interface Course {
   duration?: string;
   days?: number;
   level?: string;
+  language?: string;
   learningObjectives?: string[];
   requirements?: string[];
   targetAudience?: string[];
@@ -43,6 +44,7 @@ interface Course {
   skills?: string[];
   progress?: number;
   image?: string;
+  courseUrl?: string;
 }
 
 interface EnrollFormProps {
@@ -80,8 +82,9 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
       return;
     }
     
-    // Redirect to payment form with correct path
-    navigate(`/course/${courseId}/payment`);
+    // Use courseUrl if available
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}/payment`);
   };
 
   const handleStartCourse = async () => {
@@ -114,7 +117,8 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   };
 
   const handleResumeCourse = () => {
-    navigate(`/course/${courseId}/weeks`);
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}/weeks`);
   };
 
   if (isLoading) {
@@ -335,7 +339,14 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
                         </svg>
                         {course?.duration || '10 hours'} of video content
                       </li>
-                      
+                      {course?.language && (
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Language: {course.language}
+                        </li>
+                      )}
                       <li className="flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

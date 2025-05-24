@@ -48,6 +48,7 @@ interface EnrollmentRequest {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   deletedAt?: string;
+  courseUrl?: string;
 }
 
 const EnrollmentRequests = () => {
@@ -683,8 +684,8 @@ const EnrollmentRequests = () => {
                 <TableBody>
                             {filteredRequests.map((request, index) => (
                               <TableRow key={request._id} className={cn(
-                                "hover:bg-muted/50 transition-colors",
-                                selectedRequests.includes(request._id) && "bg-muted/30"
+                                  "hover:bg-muted/50 transition-colors",
+                                  selectedRequests.includes(request._id) && "bg-muted/30"
                               )}>
                                 {isSelectionMode && (
                                   <TableCell className="py-3">
@@ -698,8 +699,8 @@ const EnrollmentRequests = () => {
                                   {index + 1}
                                 </TableCell>
                                 <TableCell className="py-3 align-top">
-                                  {formatDate(request.createdAt)}
-                                </TableCell>
+                        {formatDate(request.createdAt)}
+                      </TableCell>
                                 <TableCell className="py-3">
                                   <div className="flex flex-col gap-0.5">
                                     <span className={cn(
@@ -727,23 +728,26 @@ const EnrollmentRequests = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-3">
-                                  <div className="max-w-[300px] truncate" title={request.courseName}>
-                                    {request.courseName}
+                                  {request.courseId?.title || 'Unknown Course'}
+                                  {request.courseUrl && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {request.courseUrl}
                                   </div>
+                                  )}
                                 </TableCell>
                                 <TableCell className="py-3">{request.transactionId}</TableCell>
                                 <TableCell className="py-3">{getStatusBadge(request.status)}</TableCell>
                                 <TableCell className="py-3">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => handleViewScreenshot(request)}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleViewScreenshot(request)}
                                     className="gap-2 hover:bg-primary hover:text-white transition-colors whitespace-nowrap"
-                                  >
+                        >
                                     <Eye className="h-4 w-4" />
-                                    View
-                                  </Button>
-                                </TableCell>
+                          View
+                        </Button>
+                      </TableCell>
                                 <TableCell className="py-3">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -779,39 +783,39 @@ const EnrollmentRequests = () => {
                                         </>
                                       ) : (
                                         <>
-                                          {request.status === 'pending' && (
-                                            <>
-                                              <DropdownMenuItem
-                                                onClick={() => handleApprove(request)}
-                                                className="gap-2"
-                                              >
-                                                <CheckCircle className="h-4 w-4" />
-                                                Approve
-                                              </DropdownMenuItem>
-                                              <DropdownMenuItem
-                                                onClick={() => handleReject(request)}
-                                                className="gap-2"
-                                              >
-                                                <XCircle className="h-4 w-4" />
-                                                Reject
-                                              </DropdownMenuItem>
-                                              <DropdownMenuSeparator />
-                                            </>
-                                          )}
+                        {request.status === 'pending' && (
+                                        <>
                                           <DropdownMenuItem
-                                            onClick={() => handleDelete([request._id])}
-                                            className="gap-2 text-red-600"
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                            Delete
+                              onClick={() => handleApprove(request)}
+                                            className="gap-2"
+                            >
+                                            <CheckCircle className="h-4 w-4" />
+                              Approve
                                           </DropdownMenuItem>
+                                          <DropdownMenuItem
+                              onClick={() => handleReject(request)}
+                                            className="gap-2"
+                            >
+                                            <XCircle className="h-4 w-4" />
+                              Reject
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                        </>
+                        )}
+                                      <DropdownMenuItem
+                                        onClick={() => handleDelete([request._id])}
+                                        className="gap-2 text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                            Delete
+                                      </DropdownMenuItem>
                                         </>
                                       )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
                         <div className="sticky bottom-0 py-2 px-3 text-sm text-muted-foreground bg-white border-t">

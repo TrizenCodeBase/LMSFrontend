@@ -280,34 +280,43 @@ const CourseManagement = () => {
                   ) : (
                     filteredCourses.map((course) => (
                       <TableRow key={course._id || course.id}>
-                      <TableCell className="font-medium">{course.title}</TableCell>
-                      <TableCell>{course.category}</TableCell>
+                        <TableCell className="py-3">
+                          <div className="max-w-[300px]">
+                            <div className="font-medium truncate">{course.title}</div>
+                            {course.courseUrl && (
+                              <div className="text-xs text-muted-foreground mt-1 truncate">
+                                {course.courseUrl}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{course.category}</TableCell>
                         <TableCell>{course.instructor || 'Unknown'}</TableCell>
                         <TableCell>{getStatusBadge(course.status as string)}</TableCell>
                         <TableCell>{course.students || 0}</TableCell>
                         <TableCell>{formatDate(course.createdAt)}</TableCell>
                         <TableCell>{getLastUpdated(course)}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleCourseAction('View', course)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleCourseAction('Edit', course)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleCourseAction('Manage Enrollments', course)}>
-                              <Users className="mr-2 h-4 w-4" />
-                              Manage Enrollments
-                            </DropdownMenuItem>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleCourseAction('View', course)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCourseAction('Edit', course)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCourseAction('Manage Enrollments', course)}>
+                                <Users className="mr-2 h-4 w-4" />
+                                Manage Enrollments
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {(course.status as string) === 'archived' ? (
                                 <DropdownMenuItem onClick={() => handleCourseAction('Activate', course)}>
@@ -320,17 +329,17 @@ const CourseManagement = () => {
                                   Archive
                                 </DropdownMenuItem>
                               )}
-                            <DropdownMenuItem 
-                              onClick={() => handleCourseAction('Delete', course)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                              <DropdownMenuItem 
+                                onClick={() => handleCourseAction('Delete', course)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
                 </TableBody>

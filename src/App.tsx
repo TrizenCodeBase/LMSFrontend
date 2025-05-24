@@ -145,29 +145,15 @@ const AppRoutes = () => (
         <Courses />
       </ProtectedRoute>
     } />
-    <Route path="/explore-courses" element={
-      <ProtectedRoute>
-        <ExploreCourses />
-      </ProtectedRoute>
-    } />
+    <Route path="/explore-courses" element={<ExploreCourses />} />
     <Route path="/course/:courseId" element={
       <ProtectedRoute>
         <CourseEnrollment />
       </ProtectedRoute>
     } />
-    <Route path="/course/:courseId/details" element={
-      <CourseDetails />
-    } />
-    <Route path="/course/:courseId/payment" element={
-      <ProtectedRoute>
-        <CoursePayment />
-      </ProtectedRoute>
-    } />
-    <Route path="/course/:courseId/weeks" element={
-      <ProtectedRoute>
-        <CourseWeekView />
-      </ProtectedRoute>
-    } />
+    <Route path="/course/:courseId/details" element={<CourseDetails />} />
+    <Route path="/course/:courseId/payment" element={<CoursePayment />} />
+    <Route path="/course/:courseId/weeks" element={<CourseWeekView />} />
     <Route path="/course/:courseId/assessments" element={
       <ProtectedRoute>
         <Assessments />

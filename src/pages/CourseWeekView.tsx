@@ -11,7 +11,7 @@ import { Video, CheckCircle, AlertCircle, Menu, Lock, Unlock, Clock, ArrowRight,
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useUpdateProgress, Course, RoadmapDay } from '@/services/courseService';
+import { useUpdateProgress, Course, RoadmapDay, useCourseDetails } from '@/services/courseService';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import MCQQuiz from '@/components/MCQQuiz';
@@ -58,6 +58,7 @@ const VideoPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [lastValidTime, setLastValidTime] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const playerRef = useRef<any>(null);
 
   const getDriveFileId = (url: string) => {
     try {
@@ -174,23 +175,25 @@ const VideoPlayer = ({
   // Fallback: custom player for direct video playback (e.g., Minio-stored video)
   return (
     <div className="aspect-video w-full rounded-lg overflow-hidden bg-black relative">
-      <Plyr
-        source={{
-          type: 'video',
-          sources: [
-            {
-              src: videoUrl,
-              provider: 'html5'
-            }
-          ]
-        }}
-        options={{
-          controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
-          settings: ['quality', 'speed'],
-          keyboard: { global: true }
-        }}
-        onEnded={onVideoComplete}
-      />
+      <div ref={playerRef}>
+        <Plyr
+          source={{
+            type: 'video',
+            sources: [
+              {
+                src: videoUrl,
+                provider: 'html5'
+              }
+            ]
+          }}
+          options={{
+            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+            settings: ['quality', 'speed'],
+            keyboard: { global: true }
+          }}
+          onEnded={onVideoComplete}
+        />
+      </div>
       {/* Logo overlay */}
       <div className="absolute top-2 md:top-4 z-5 flex items-center" style={{ right: '-3px' }}>
         <div className="absolute inset-0 bg-black/0 rounded-lg -z-5" />
@@ -344,15 +347,8 @@ const CourseWeekView = () => {
     }
   }, [location.search]);
 
-  const { data: course, isLoading, error } = useQuery<CourseData>({
-    queryKey: ['course', courseId],
-    queryFn: async () => {
-      if (!courseId) throw new Error("Course ID is required");
-      const { data } = await axios.get(`/api/courses/${courseId}`);
-      return data as CourseData;
-    },
-    enabled: !!courseId && isAuthenticated
-  });
+  // Use the courseId directly with useCourseDetails
+  const { data: course, isLoading, error } = useCourseDetails(courseId);
 
   useEffect(() => {
     if (!loading && !isAuthenticated && courseId) {
@@ -367,13 +363,20 @@ const CourseWeekView = () => {
         setSelectedDay(course.roadmap[0].day);
       }
       
+      // Update completed days only when course data changes
       if (typeof course.progress === 'number' && course.roadmap) {
-        const completedCount = Math.round((course.progress * course.roadmap.length) / 100);
-        const newCompletedDays = Array.from({ length: completedCount }, (_, i) => i + 1);
-        setCompletedDays(newCompletedDays);
+        // If the course has completedDays property, use it
+        if (course.completedDays) {
+          setCompletedDays(course.completedDays);
+        } else {
+          // Otherwise calculate from progress
+          const completedCount = Math.round((course.progress * course.roadmap.length) / 100);
+          const newCompletedDays = Array.from({ length: completedCount }, (_, i) => i + 1);
+          setCompletedDays(newCompletedDays);
+        }
       }
     }
-  }, [course, selectedDay]);
+  }, [course]);
 
   // Effect to scroll to selected day in sidebar after page load
   useEffect(() => {
@@ -392,17 +395,40 @@ const CourseWeekView = () => {
   const handleDayComplete = async (day: number) => {
     try {
       setIsMarking(true);
-    
-      let newCompletedDays: number[];
       
+      // Calculate new completed days
+      let newCompletedDays: number[];
       if (completedDays.includes(day)) {
-        newCompletedDays = completedDays.filter(d => d !== day);
+        // If unchecking a day, remove it and all days after it
+        newCompletedDays = completedDays.filter(d => d < day);
       } else {
+        // If checking a day, only add that specific day
+        // First check if there are any gaps
+        const previousDay = day - 1;
+        if (day > 1 && !completedDays.includes(previousDay)) {
+          toast({
+            description: (
+              <CustomToast 
+                title="Invalid Action"
+                description="You must complete the previous day first."
+                type="error"
+              />
+            ),
+            duration: 3000,
+            className: "p-0 bg-transparent border-0"
+          });
+          setIsMarking(false);
+          return;
+        }
         newCompletedDays = [...completedDays, day];
       }
-      
-      setCompletedDays(newCompletedDays);
-      
+
+      // Use course._id for the API call
+      if (!course?._id) {
+        throw new Error('Course ID not found');
+      }
+
+      // Calculate progress percentage
       const progressPercentage = Math.round((newCompletedDays.length / (course?.roadmap.length || 1)) * 100);
       
       let status = 'enrolled';
@@ -411,58 +437,63 @@ const CourseWeekView = () => {
       } else if (progressPercentage === 100) {
         status = 'completed';
       }
-      
-      await updateProgressMutation.mutateAsync({
-        courseId,
+
+      // Make the API call
+      const result = await updateProgressMutation.mutateAsync({
+        courseId: course._id,
         progress: progressPercentage,
         status: status as 'enrolled' | 'started' | 'completed',
-        token
+        token,
+        completedDays: newCompletedDays
       });
-      
-      // Check if this is the last available day and there are more days in total duration
-      const totalDurationDays = course?.duration ? extractDurationDays(course.duration) : 0;
-      const isLastAvailableDay = day === course?.roadmap.length;
-      const hasMoreDaysToCome = totalDurationDays > course?.roadmap.length;
-      
-      if (!completedDays.includes(day)) {
-        if (isLastAvailableDay && hasMoreDaysToCome) {
-          // Show toast for upcoming content
-          toast({
-            description: (
-              <CustomToast 
-                title="Course Progress"
-                description="You've completed all available content! New videos will be uploaded by the instructor soon."
-                type="info"
-              />
-            ),
-            duration: 5000,
-            className: "p-0 bg-transparent border-0"
-          });
+
+      // Only update the state if the API call was successful
+      if (result) {
+        const wasCompleted = completedDays.includes(day);
+        setCompletedDays(newCompletedDays);
+        
+        // Reset watched videos state for the uncompleted day and subsequent days
+        if (wasCompleted) {
+          setWatchedVideos(prev => prev.filter(v => v <= day));
         } else {
-          // Navigate to next day if available
+          // If marking as complete, navigate to next day if available
           const nextDay = course?.roadmap.find(d => d.day === day + 1);
           if (nextDay) {
-            setTimeout(() => {
-              setSelectedDay(nextDay.day);
-            }, 500); // Small delay to ensure the completion is registered
+            setSelectedDay(nextDay.day);
           }
         }
+        
+        // Show appropriate toast message
+        toast({
+          description: (
+            <CustomToast 
+              title="Progress Updated"
+              description={wasCompleted 
+                ? "Day marked as incomplete. Subsequent days are now locked."
+                : "Day marked as complete. Moving to next day."}
+              type={wasCompleted ? "info" : "success"}
+            />
+          ),
+          duration: 3000,
+          className: "p-0 bg-transparent border-0"
+        });
+      } else {
+        throw new Error('Failed to update progress');
       }
 
     } catch (error: any) {
+      // Revert to original state on error
       toast({
         description: (
           <CustomToast 
             title="Error saving progress"
-            description={error.response?.data?.message || "Could not update your course progress. Please try again."}
+            description={error.response?.data?.message || error.message || "Could not update your course progress. Please try again."}
             type="error"
           />
         ),
         duration: 3000,
         className: "p-0 bg-transparent border-0"
       });
-      
-      setCompletedDays(completedDays);
     } finally {
       setIsMarking(false);
     }
@@ -474,7 +505,7 @@ const CourseWeekView = () => {
   };
 
   const handleQuizComplete = async (score: number) => {
-    if (!courseId || !token) return;
+    if (!course?._id || !token) return;
 
     const currentDay = selectedDay;
     const dayData = course?.roadmap.find(day => day.day === currentDay);
@@ -482,7 +513,7 @@ const CourseWeekView = () => {
     try {
       // Submit to database
       const response = await axios.post('/api/quiz-submissions', {
-        courseId,
+        courseId: course._id,
         dayNumber: currentDay,
         title: `Day ${currentDay} Quiz`,
         score,
@@ -551,7 +582,7 @@ const CourseWeekView = () => {
         description: (
           <CustomToast 
             title="Content Locked"
-            description="New videos will be uploaded by the instructor soon."
+            description="Complete the previous day's content to unlock this day."
             type="error"
           />
         ),

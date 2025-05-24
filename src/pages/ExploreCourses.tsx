@@ -19,7 +19,9 @@ const ExploreCourses = () => {
   
   // Handler for when a course card is clicked
   const handleCourseClick = (courseId: string) => {
-    navigate(`/course/${courseId}`);
+    const course = courses?.find(c => c._id === courseId);
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}`);
   };
   
   // Handler for enrolling in a course
@@ -34,8 +36,10 @@ const ExploreCourses = () => {
       return;
     }
     
+    const course = courses?.find(c => c._id === courseId);
+    const courseIdentifier = course?.courseUrl || courseId;
     // Navigate to payment form
-    navigate(`/course/${courseId}/payment`);
+    navigate(`/course/${courseIdentifier}/payment`);
   };
   
   // Handler for starting a course
@@ -44,7 +48,7 @@ const ExploreCourses = () => {
     
     try {
       await updateProgressMutation.mutateAsync({ 
-        courseId, 
+        courseId: courseId.split('-')[0], // Extract courseId from courseUrl if needed
         progress: 1, 
         status: 'started',
         token 

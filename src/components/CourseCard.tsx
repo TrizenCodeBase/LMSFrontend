@@ -13,6 +13,7 @@ interface CourseCardProps {
   rating: number;
   students: number;
   level: "Beginner" | "Intermediate" | "Advanced";
+  language?: string;
   onClick?: () => void;
   progress?: number;
   enrollmentStatus?: 'enrolled' | 'started' | 'completed' | 'pending';
@@ -21,6 +22,7 @@ interface CourseCardProps {
   onResumeClick?: (e: React.MouseEvent) => void;
   instructor?: string;
   roadmap?: { day: number; topics: string }[];
+  courseUrl?: string;
 }
 
 const CourseCard = ({
@@ -32,6 +34,7 @@ const CourseCard = ({
   rating,
   students,
   level,
+  language,
   onClick,
   progress = 0,
   enrollmentStatus,
@@ -39,7 +42,8 @@ const CourseCard = ({
   onStartClick,
   onResumeClick,
   instructor,
-  roadmap = []
+  roadmap = [],
+  courseUrl
 }: CourseCardProps) => {
   
   // Handle button clicks without propagating to the card
@@ -169,6 +173,25 @@ const CourseCard = ({
             </svg>
             <span>{students} students</span>
           </div>
+          {language && (
+            <div className="flex items-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              <span>{language}</span>
+            </div>
+          )}
         </div>
         
         <CardFooter className="px-0 pb-0 pt-4">

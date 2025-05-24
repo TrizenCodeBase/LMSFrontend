@@ -26,17 +26,19 @@ export interface RoadmapDay {
 
 export interface Course {
   id?: string;
-  _id?: string;
-  image: string;
+  _id: string;
   title: string;
   description: string;
   longDescription?: string;
+  image: string;
   instructor: string;
+  instructorId: string;
   duration: string;
-  rating?: number;
-  students?: number;
+  rating: number;
+  students: number;
   level: "Beginner" | "Intermediate" | "Advanced";
   category: string;
+  language: string;
   skills: string[];
   courses?: {
     title: string;
@@ -56,6 +58,8 @@ export interface Course {
   price?: number;
   courseAccess?: boolean;
   createdAt?: string;
+  courseUrl?: string;
+  completedDays?: number[];
 }
 
 // Fetch all courses
@@ -72,21 +76,46 @@ export const useAllCourses = () => {
   });
 };
 
-// Get course by ID
-export const useCourseDetails = (courseId: string | undefined) => {
+// Get course by ID or courseUrl
+export const useCourseDetails = (courseIdOrUrl: string | undefined) => {
   return useQuery({
-    queryKey: ['course', courseId],
+    queryKey: ['course', courseIdOrUrl],
     queryFn: async (): Promise<Course> => {
-      if (!courseId) throw new Error("Course ID is required");
+      if (!courseIdOrUrl) throw new Error("Course ID or URL is required");
       
-      const response = await axios.get(`/api/courses/${courseId}`);
-      if (!response.data) {
-        throw new Error(`Course with ID ${courseId} not found`);
+      try {
+        // Try the courseUrl endpoint first
+        const response = await axios.get(`/api/courses/url/${courseIdOrUrl}`);
+        if (response.data) {
+          return response.data as Course;
+        }
+      } catch (error: any) {
+        // If not found by URL, try the regular course endpoint
+        try {
+          const idResponse = await axios.get(`/api/courses/${courseIdOrUrl}`);
+          if (idResponse.data) {
+            return idResponse.data as Course;
+          }
+        } catch (idError: any) {
+          // Log the error for debugging
+          console.error('Course fetch error:', {
+            urlError: error?.response?.data,
+            idError: idError?.response?.data
+          });
+          
+          // Throw a user-friendly error
+          throw new Error(
+            idError?.response?.data?.message || 
+            error?.response?.data?.message || 
+            'Course not found'
+          );
+        }
       }
-      return response.data as Course;
+      throw new Error(`Course not found: ${courseIdOrUrl}`);
     },
-    enabled: !!courseId,
+    enabled: !!courseIdOrUrl,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1, // Only retry once since we're already trying multiple endpoints
   });
 };
 
@@ -129,34 +158,35 @@ export const useEnrollCourse = () => {
   });
 };
 
+interface UpdateProgressParams {
+  courseId: string;
+  progress: number;
+  status: 'enrolled' | 'started' | 'completed';
+  token: string;
+  completedDays?: number[];
+}
+
 // Update course progress and status
 export const useUpdateProgress = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ 
-      courseId, 
-      progress, 
-      status,
-      token 
-    }: { 
-      courseId: string, 
-      progress: number,
-      status?: 'enrolled' | 'started' | 'completed' | 'pending',
-      token: string 
-    }) => {
+    mutationFn: async ({ courseId, progress, status, token, completedDays }: UpdateProgressParams) => {
       const response = await axios.put(
-        `/api/my-courses/${courseId}/progress`, 
-        { progress, status }
+        `/api/courses/${courseId}/progress`,
+        { progress, status, completedDays },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
       return response.data;
     },
     onSuccess: (_, variables) => {
-      // Invalidate and refetch the relevant queries
-      queryClient.invalidateQueries({ queryKey: ['enrolledCourses'] });
-      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['enrolled-courses'] });
       queryClient.invalidateQueries({ queryKey: ['course', variables.courseId] });
-    },
+    }
   });
 };
 

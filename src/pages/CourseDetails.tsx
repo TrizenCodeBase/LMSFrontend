@@ -38,7 +38,9 @@ const CourseDetails = () => {
       return;
     }
     
-    navigate(`/course/${courseId}/payment`);
+    // Use courseUrl for navigation if available
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}/payment`);
   };
 
   if (isLoading) {
@@ -108,6 +110,14 @@ const CourseDetails = () => {
                   </div>
                   <div className="text-muted-foreground">•</div>
                   <div className="text-muted-foreground">{course.students?.toLocaleString()} students</div>
+                  {course.language && (
+                    <>
+                      <div className="text-muted-foreground">•</div>
+                      <Badge variant="outline" className="text-xs">
+                        {course.language}
+                      </Badge>
+                    </>
+                  )}
                 </div>
 
                 {/* Short Description */}
@@ -190,6 +200,14 @@ const CourseDetails = () => {
                       </svg>
                       Lifetime access
                     </li>
+                    {course.language && (
+                      <li className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Language: {course.language}
+                      </li>
+                    )}
                   </ul>
                 </div>
               </div>

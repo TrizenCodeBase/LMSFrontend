@@ -26,7 +26,9 @@ const Courses = () => {
       return;
     }
     
-    navigate(`/course/${courseId}/weeks`);
+    // Use courseUrl if available, otherwise use courseId
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}/weeks`);
   };
   
   const handleExploreCoursesClick = () => {
@@ -44,7 +46,9 @@ const Courses = () => {
         token 
       });
       
-      navigate(`/course/${courseId}/weeks`);
+      const course = enrolledCourses?.find(c => c._id === courseId);
+      const courseIdentifier = course?.courseUrl || courseId;
+      navigate(`/course/${courseIdentifier}/weeks`);
     } catch (error) {
       toast({
         title: "Error",
@@ -55,7 +59,9 @@ const Courses = () => {
   };
   
   const handleResumeClick = (courseId: string) => {
-    navigate(`/course/${courseId}/weeks`);
+    const course = enrolledCourses?.find(c => c._id === courseId);
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}/weeks`);
   };
   
   // Group courses by status
@@ -121,6 +127,7 @@ const Courses = () => {
                       rating={course.rating}
                       students={course.students}
                       level={course.level}
+                      language={course.language}
                       progress={course.progress}
                       instructor={course.instructor}
                       enrollmentStatus="pending"
@@ -133,7 +140,7 @@ const Courses = () => {
             
             {activeCourses.length > 0 ? (
               <div>
-                <h2 className="text-xl font-semibold mb-4">My Courses</h2>
+                {/* <h2 className="text-xl font-semibold mb-4">My Courses</h2> */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                   {activeCourses.map((course) => (
                     <CourseCard
@@ -146,6 +153,7 @@ const Courses = () => {
                       rating={course.rating}
                       students={course.students}
                       level={course.level}
+                      language={course.language}
                       progress={course.progress}
                       instructor={course.instructor}
                       enrollmentStatus={course.status as 'enrolled' | 'started' | 'completed'}
