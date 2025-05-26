@@ -945,8 +945,13 @@ const CourseWeekView = () => {
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-80 p-0">
-            <SidebarContent />
+          <SheetContent side="left" className="w-80 p-0 flex flex-col">
+            <div className="p-4 border-b">
+              <h2 className="font-semibold">Course Content</h2>
+            </div>
+            <ScrollArea className="flex-1">
+              <SidebarContent />
+            </ScrollArea>
           </SheetContent>
         </Sheet>
 
@@ -1007,7 +1012,7 @@ const CourseWeekView = () => {
                         ) : (
                           <>
                             <span>Complete and Continue</span>
-                          <ArrowRight className="h-4 w-4" />
+                            <ArrowRight className="h-4 w-4" />
                           </>
                         )}
                       </>

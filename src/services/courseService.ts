@@ -35,6 +35,7 @@ export interface Course {
   instructorId: string;
   duration: string;
   rating: number;
+  totalRatings: number;
   students: number;
   level: "Beginner" | "Intermediate" | "Advanced";
   category: string;
@@ -60,6 +61,17 @@ export interface Course {
   createdAt?: string;
   courseUrl?: string;
   completedDays?: number[];
+  modules?: any[];
+  reviews?: any[];
+  isActive?: boolean;
+  averageRating?: number;
+}
+
+export interface ReviewCounts {
+  [courseId: string]: {
+    totalReviews: number;
+    rating: number;
+  };
 }
 
 // Fetch all courses
@@ -541,5 +553,16 @@ export const useDeleteCourse = () => {
       queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
+  });
+};
+
+export const useReviewCounts = () => {
+  return useQuery<ReviewCounts>({
+    queryKey: ['reviewCounts'],
+    queryFn: async (): Promise<ReviewCounts> => {
+      const response = await axios.get<ReviewCounts>('/api/review-counts');
+      return response.data;
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 };

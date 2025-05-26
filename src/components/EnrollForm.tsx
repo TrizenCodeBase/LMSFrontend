@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useCourseDetails, useEnrollCourse, useUpdateProgress } from '@/services/courseService';
+import { useCourseDetails, useEnrollCourse, useUpdateProgress, useReviewCounts } from '@/services/courseService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { useQueryClient } from '@tanstack/react-query';
+import { Star } from 'lucide-react';
+import CourseReviews from '@/components/CourseReviews';
+import axios from '@/lib/axios';
 
 interface RoadmapDay {
   topics: string;
@@ -47,6 +50,15 @@ interface Course {
   courseUrl?: string;
 }
 
+interface Review {
+  _id: string;
+  studentId: string;
+  studentName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 interface EnrollFormProps {
   courseId?: string;
 }
@@ -56,10 +68,15 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   const navigate = useNavigate();
   const { user, token, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const { data: reviewCounts } = useReviewCounts();
+  const [reviews, setReviews] = useState<Review[]>([]);
   
-  const { data: course, isLoading, isError, refetch } = useCourseDetails(courseId, token);
+  const { data: course, isLoading, isError, refetch } = useCourseDetails(courseId);
   const enrollMutation = useEnrollCourse();
   const updateProgressMutation = useUpdateProgress();
+
+  // Get review data from the cache
+  const reviewData = course?._id ? (reviewCounts?.[course._id] || { totalReviews: 0, rating: 0 }) : { totalReviews: 0, rating: 0 };
 
   useEffect(() => {
     refetch();
@@ -70,6 +87,32 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
       queryClient.invalidateQueries({ queryKey: ['course', courseId] });
     }
   }, [isAuthenticated, courseId, queryClient]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!course?._id) return;
+      try {
+        const response = await axios.get<Review[]>(`/api/courses/${course._id}/reviews`);
+        setReviews(response.data);
+        console.log('Fetched reviews:', response.data);
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+      }
+    };
+    fetchReviews();
+  }, [course?._id]);
+
+  const handleReviewsChange = () => {
+    // Refetch reviews when a review is added/updated/deleted
+    if (course?._id) {
+      axios.get<Review[]>(`/api/courses/${course._id}/reviews`)
+        .then(response => {
+          setReviews(response.data);
+          console.log('Updated reviews:', response.data);
+        })
+        .catch(error => console.error('Error fetching reviews:', error));
+    }
+  };
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
@@ -119,6 +162,28 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   const handleResumeCourse = () => {
     const courseIdentifier = course?.courseUrl || courseId;
     navigate(`/course/${courseIdentifier}/weeks`);
+  };
+
+  const renderRatingStars = () => {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <Star
+              key={value}
+              className={`h-4 w-4 ${
+                value <= (reviewData.rating || 0)
+                  ? 'text-yellow-500 fill-yellow-500'
+                  : 'text-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-sm font-medium ml-1">{(reviewData.rating || 0).toFixed(1)}</span>
+        <span className="text-sm text-muted-foreground ml-1">•</span>
+        <span className="text-sm text-muted-foreground">{reviewData.totalReviews || 0} reviews</span>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -263,14 +328,10 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
                   {course?.title}
                 </h1>
                 
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-yellow-500 flex">★★★★☆</span>
-                    <span className="font-medium">{course?.rating}</span>
-                    <span className="text-muted-foreground">({Math.floor(course?.students / 15)} reviews)</span>
-                  </div>
-                  <div className="text-muted-foreground">•</div>
-                  <div className="text-muted-foreground">{course?.students?.toLocaleString()} students</div>
+                <div className="flex items-center gap-4">
+                  {renderRatingStars()}
+                  <div className="text-sm text-muted-foreground">•</div>
+                  <div className="text-sm text-muted-foreground">{course?.students?.toLocaleString()} students</div>
                 </div>
 
                 {/* Short Description */}
@@ -427,6 +488,18 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Course Reviews Section */}
+                <div className="bg-card rounded-xl p-8 border">
+                  {course && (
+                    <CourseReviews
+                      courseId={course._id}
+                      courseTitle={course.title}
+                      reviews={reviews}
+                      onReviewsChange={handleReviewsChange}
+                    />
+                  )}
                 </div>
               </div>
             </div>

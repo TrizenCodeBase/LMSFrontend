@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Play, Plus, ArrowRight } from "lucide-react";
+import { Check, Play, Plus, ArrowRight, Star } from "lucide-react";
+import ReviewDialog from "./ReviewDialog";
+import { useQueryClient } from '@tanstack/react-query';
+import { useReviewCounts } from "@/services/courseService";
 
 interface CourseCardProps {
   id: string;
@@ -11,6 +14,7 @@ interface CourseCardProps {
   description: string;
   duration: string;
   rating: number;
+  totalRatings: number;
   students: number;
   level: "Beginner" | "Intermediate" | "Advanced";
   language?: string;
@@ -32,6 +36,7 @@ const CourseCard = ({
   description,
   duration,
   rating,
+  totalRatings,
   students,
   level,
   language,
@@ -45,11 +50,32 @@ const CourseCard = ({
   roadmap = [],
   courseUrl
 }: CourseCardProps) => {
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: reviewCounts } = useReviewCounts();
+  
+  const courseReviewData = reviewCounts?.[id] || { totalReviews: 0, rating: 0 };
+  
+  // Log course review information
+  useEffect(() => {
+    console.log(`Course: ${title}`);
+    console.log(`Total Reviews from API: ${courseReviewData.totalReviews}`);
+    console.log(`Rating from API: ${courseReviewData.rating}`);
+    console.log('------------------------');
+  }, [title, courseReviewData]);
   
   // Handle button clicks without propagating to the card
   const handleActionClick = (e: React.MouseEvent, callback?: (e: React.MouseEvent) => void) => {
+    e.preventDefault();
     e.stopPropagation();
     if (callback) callback(e);
+  };
+
+  const handleReviewSubmitted = () => {
+    // Invalidate relevant queries to refetch course data
+    queryClient.invalidateQueries({ queryKey: ['enrolledCourses'] });
+    queryClient.invalidateQueries({ queryKey: ['courses'] });
+    queryClient.invalidateQueries({ queryKey: ['reviewCounts'] });
   };
   
   // Calculate progress based on course duration
@@ -79,6 +105,28 @@ const CourseCard = ({
   const actualProgress = calculateProgress();
   const isFullyComplete = progress === 100 && (!duration || parseInt(duration.split(' ')[0]) <= roadmap.length);
   
+  const renderRatingStars = (rating: number) => {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <Star
+              key={value}
+              className={`h-4 w-4 ${
+                value <= rating
+                  ? 'text-yellow-500 fill-yellow-500'
+                  : 'text-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-sm font-medium ml-1">{courseReviewData.rating.toFixed(1)}</span>
+        <span className="text-sm text-muted-foreground ml-1">•</span>
+        <span className="text-sm text-muted-foreground">{courseReviewData.totalReviews} reviews</span>
+      </div>
+    );
+  };
+  
   return (
     <Card 
       className="overflow-hidden transition-all duration-300 hover:shadow-md flex flex-col"
@@ -98,6 +146,19 @@ const CourseCard = ({
             </Badge>
           </div>
         )}
+        {enrollmentStatus && enrollmentStatus !== 'pending' && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsReviewDialogOpen(true);
+            }}
+            className="absolute top-2 right-2 bg-white/90 hover:bg-white text-primary rounded-full px-3 py-1 text-xs font-medium shadow-sm flex items-center gap-1 transition-all hover:scale-105"
+          >
+            <Star className="h-3 w-3" />
+            Review
+          </button>
+        )}
       </div>
       
       <CardHeader className="flex-1">
@@ -109,23 +170,7 @@ const CourseCard = ({
           }>
             {level}
           </Badge>
-          <div className="flex items-center gap-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-yellow-500"
-            >
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-            <span className="text-sm font-medium">{rating.toFixed(1)}</span>
-          </div>
+          {renderRatingStars(rating)}
         </div>
         <h3 className="mt-2 font-semibold leading-tight">{title}</h3>
         <p className="line-clamp-2 text-sm text-muted-foreground">{description}</p>
@@ -217,6 +262,7 @@ const CourseCard = ({
                 )}
               </div>
 
+              <div className="flex items-center gap-2">
               {enrollmentStatus === 'enrolled' && onStartClick && (
                 <Button 
                   size="sm"
@@ -239,17 +285,18 @@ const CourseCard = ({
                 </Button>
               )}
               
-              {isFullyComplete ? (
+                {isFullyComplete ? (
                 <Badge className="px-3 py-1 rounded-full bg-green-600 text-white flex items-center gap-1">
                   <Check className="h-3 w-3" />
                   Completed
                 </Badge>
-              ) : enrollmentStatus === 'pending' && (
+                ) : enrollmentStatus === 'pending' && (
                 <Badge className="px-3 py-1 rounded-full bg-yellow-600 text-white flex items-center gap-1">
                   <span className="h-2 w-2 bg-white rounded-full animate-pulse mr-1"></span>
                   Pending
                 </Badge>
               )}
+              </div>
             </div>
           )}
 
@@ -268,6 +315,15 @@ const CourseCard = ({
           )}
         </CardFooter>
       </CardContent>
+
+      {/* Review Dialog */}
+      <ReviewDialog
+        isOpen={isReviewDialogOpen}
+        onClose={() => setIsReviewDialogOpen(false)}
+        courseId={id}
+        courseTitle={title}
+        onReviewSubmitted={handleReviewSubmitted}
+      />
     </Card>
   );
 };

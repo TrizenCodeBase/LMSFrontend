@@ -47,14 +47,22 @@ const ExploreCourses = () => {
     if (!token) return;
     
     try {
+      // Find the course to get its actual ID
+      const course = courses?.find(c => c._id === courseId || c.courseUrl === courseId);
+      if (!course) {
+        throw new Error('Course not found');
+      }
+
       await updateProgressMutation.mutateAsync({ 
-        courseId: courseId.split('-')[0], // Extract courseId from courseUrl if needed
+        courseId: course._id, // Use the actual course ID for the API call
         progress: 1, 
         status: 'started',
         token 
       });
       
-      navigate(`/course/${courseId}`);
+      // Use courseUrl for navigation if available
+      const courseIdentifier = course.courseUrl || course._id;
+      navigate(`/course/${courseIdentifier}/weeks`);
     } catch (error) {
       toast({
         title: "Error",
@@ -66,7 +74,9 @@ const ExploreCourses = () => {
   
   // Handler for resuming a course
   const handleResumeClick = (courseId: string) => {
-    navigate(`/course/${courseId}`);
+    const course = courses?.find(c => c._id === courseId);
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}/weeks`);
   };
   
   if (isLoading) {
@@ -108,8 +118,8 @@ const ExploreCourses = () => {
     <DashboardLayout>
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Explore Courses</h1>
-          <p className="text-muted-foreground mt-1">Discover new courses and expand your knowledge</p>
+          {/* <h1 className="text-3xl font-bold tracking-tight">Explore Courses</h1>
+          <p className="text-muted-foreground mt-1">Discover new courses and expand your knowledge</p> */}
         </div>
         
         <FilterableCoursesSection 

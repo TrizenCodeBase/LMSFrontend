@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
-import { useCourseDetails } from '@/services/courseService';
+import { useCourseDetails, useReviewCounts } from '@/services/courseService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Star } from 'lucide-react';
+import CourseReviews from '@/components/CourseReviews';
+import axios from '@/lib/axios';
 
 interface RoadmapDay {
   day: number;
@@ -17,16 +20,56 @@ interface RoadmapDay {
   transcript?: string;
 }
 
+interface Review {
+  _id: string;
+  studentId: string;
+  studentName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 const CourseDetails = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { data: course, isLoading, isError } = useCourseDetails(courseId);
+  const { data: reviewCounts } = useReviewCounts();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  
+  // Get review data from the cache
+  const reviewData = course?._id ? (reviewCounts?.[course._id] || { totalReviews: 0, rating: 0 }) : { totalReviews: 0, rating: 0 };
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!course?._id) return;
+      try {
+        const response = await axios.get<Review[]>(`/api/courses/${course._id}/reviews`);
+        setReviews(response.data);
+        console.log('Fetched reviews:', response.data);
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+      }
+    };
+    fetchReviews();
+  }, [course?._id]);
+
+  const handleReviewsChange = () => {
+    // Refetch reviews when a review is added/updated/deleted
+    if (course?._id) {
+      axios.get<Review[]>(`/api/courses/${course._id}/reviews`)
+        .then(response => {
+          setReviews(response.data);
+          console.log('Updated reviews:', response.data);
+        })
+        .catch(error => console.error('Error fetching reviews:', error));
+    }
+  };
 
   const handleEnroll = () => {
     if (!isAuthenticated) {
@@ -104,18 +147,28 @@ const CourseDetails = () => {
                 
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-yellow-500 flex">★★★★☆</span>
-                    <span className="font-medium">{course.rating}</span>
-                    <span className="text-muted-foreground">({Math.floor(course.students || 0 / 15)} reviews)</span>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <Star
+                          key={value}
+                          className={`h-4 w-4 ${
+                            value <= (reviewData.rating || 0)
+                              ? 'text-yellow-500 fill-yellow-500'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm font-medium ml-1">{(reviewData.rating || 0).toFixed(1)}</span>
+                    <span className="text-sm text-muted-foreground ml-1">•</span>
+                    <span className="text-sm text-muted-foreground">{reviewData.totalReviews || 0} reviews</span>
                   </div>
                   <div className="text-muted-foreground">•</div>
-                  <div className="text-muted-foreground">{course.students?.toLocaleString()} students</div>
-                  {course.language && (
+                  <div className="text-muted-foreground">{course?.students?.toLocaleString()} students</div>
+                  {course?.language && (
                     <>
-                      <div className="text-muted-foreground">•</div>
-                      <Badge variant="outline" className="text-xs">
-                        {course.language}
-                      </Badge>
+                      
+
                     </>
                   )}
                 </div>
@@ -263,6 +316,18 @@ const CourseDetails = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Course Reviews Section */}
+          <div className="mt-12 bg-card rounded-xl p-8 border">
+            {course && (
+              <CourseReviews
+                courseId={course._id}
+                courseTitle={course.title}
+                reviews={reviews}
+                onReviewsChange={handleReviewsChange}
+              />
+            )}
           </div>
         </div>
       </main>
