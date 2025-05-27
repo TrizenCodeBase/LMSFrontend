@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'https://lmsbackend.llp.trizenventures.com',
+  baseURL:'https://lmsbackend.llp.trizenventures.com',
 });
 
 // Add token to requests if available

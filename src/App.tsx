@@ -14,6 +14,7 @@ import ExploreCourses from "./pages/ExploreCourses";
 import CourseEnrollment from "./pages/CourseEnrollment";
 import CourseDetails from "./pages/CourseDetails";
 import CourseWeekView from "./pages/CourseWeekView";
+import CourseQuizView from "./pages/CourseQuizView";
 import CoursePayment from "./pages/CoursePayment";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
@@ -154,6 +155,11 @@ const AppRoutes = () => (
     <Route path="/course/:courseId/details" element={<CourseDetails />} />
     <Route path="/course/:courseId/payment" element={<CoursePayment />} />
     <Route path="/course/:courseId/weeks" element={<CourseWeekView />} />
+    <Route path="/course/:courseId/quiz/:dayNumber" element={
+      <ProtectedRoute>
+        <CourseQuizView />
+      </ProtectedRoute>
+    } />
     <Route path="/course/:courseId/assessments" element={
       <ProtectedRoute>
         <Assessments />

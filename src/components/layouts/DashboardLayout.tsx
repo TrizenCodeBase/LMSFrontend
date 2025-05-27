@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, FileText, Calendar, 
   MessageSquare, GraduationCap, UserCircle, 
-  Settings, LogOut, ChevronLeft, Menu
+  Settings, LogOut, ChevronLeft, Menu, ArrowLeft
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +96,18 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
     navigate('/login');
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleMobileMenuClick = () => {
+    if (isCourseWeekView) {
+      handleBack();
+    } else {
+      setMobileOpen(!mobileOpen);
+    }
+  };
+
   const menuItems = [
     { icon: BookOpen, name: 'Explore Courses', path: '/explore-courses' },
     { icon: BookOpen, name: 'My Courses', path: '/my-courses' },
@@ -106,15 +118,24 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
     { icon: Calendar, name: 'Calendar', path: '/calendar' },
   ];
 
+  // Check if we're in a course week view
+  const isCourseWeekView = location.pathname.includes('/course/') && location.pathname.includes('/weeks');
+
   return (
     <div className="min-h-screen flex bg-gray-50/50">
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background/95 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between px-4 h-full">
           <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
+            <div className="relative">
+              <Button variant="ghost" size="icon" onClick={handleMobileMenuClick}>
+                {isCourseWeekView ? (
+                  <ArrowLeft className="h-5 w-5 text-white" />
+                ) : (
               <Menu className="h-5 w-5" />
+                )}
             </Button>
+            </div>
             <Link to="/" className="ml-2 flex items-center gap-4">
               <img 
                 src="/lovable-uploads/b66cad1a-9e89-49b0-a481-bbbb0a2bbded.png" 
@@ -135,28 +156,25 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
         </div>
       </header>
 
-      {/* Sidebar */}
+      {/* Sidebar - Only show if not in course week view */}
+      {!isCourseWeekView && (
+        <>
       <aside 
-        className={`
-          bg-white border-r shadow-sm
-          fixed lg:fixed top-0 left-0 h-screen
-          transition-all duration-300 z-40
-          ${collapsed ? 'w-20' : 'w-64'}
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}
+            className={`fixed inset-y-0 left-0 z-50 bg-card border-r transition-all duration-300 ${
+              collapsed ? 'w-20' : 'w-64'
+            } ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
       >
+            {/* Sidebar content */}
         <div className="flex flex-col h-full">
-          {/* Logo Area */}
-          <div className={`h-16 flex items-center px-4 border-b ${collapsed ? 'justify-center' : 'justify-between'}`}>
-            {!collapsed && (
-              <Link to="/" className="flex items-center">
+              <div className="p-4 flex items-center justify-between border-b">
+                <Link to="/" className={`flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}>
                 <img 
                   src="/lovable-uploads/b66cad1a-9e89-49b0-a481-bbbb0a2bbded.png" 
                   alt="Trizen Logo" 
-                  className="h-10" 
+                    className="h-8" 
                 />
+                  {!collapsed && <span className="font-bold text-xl">Trizen</span>}
               </Link>
-            )}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -167,52 +185,53 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
             </Button>
           </div>
           
-          {/* Menu Items */}
-          <nav className="flex-1 py-4">
-            <ul className="space-y-1 px-2">
+              <nav className="flex-1 overflow-y-auto p-4">
               {menuItems.map((item) => (
-                <li key={item.name}>
                   <Link 
+                    key={item.path}
                     to={item.path}
-                    className="flex items-center p-2 rounded-md hover:bg-gray-100 transition-colors group"
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md mb-1 hover:bg-accent transition-colors ${
+                      location.pathname === item.path ? 'bg-accent' : ''
+                    }`}
                   >
-                    <item.icon className={`h-5 w-5 text-primary ${collapsed ? 'mx-auto' : 'mr-3'}`} />
+                    <item.icon className={`h-5 w-5 ${collapsed ? 'mx-auto' : ''}`} />
                     {!collapsed && <span>{item.name}</span>}
-                    {collapsed && (
-                      <span className="absolute left-16 p-2 bg-primary text-white rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity text-sm whitespace-nowrap">
-                        {item.name}
-                      </span>
-                    )}
                   </Link>
-                </li>
               ))}
-            </ul>
           </nav>
           
-          {/* Sign Out Button */}
           <div className="p-4 border-t">
             <Button
               variant="ghost"
-              className={`w-full flex items-center justify-${collapsed ? 'center' : 'start'} text-red-600 hover:text-red-700 hover:bg-red-50`}
+                  className={`w-full justify-start ${collapsed ? 'px-0' : ''}`}
               onClick={handleLogout}
             >
-              <LogOut className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />
-              {!collapsed && <span>Sign Out</span>}
-              {collapsed && (
-                <span className="absolute left-16 p-2 bg-red-600 text-white rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity text-sm whitespace-nowrap">
-                  Sign Out
-                </span>
-              )}
+                  <LogOut className={`h-5 w-5 ${collapsed ? 'mx-auto' : 'mr-2'}`} />
+                  {!collapsed && <span>Logout</span>}
             </Button>
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className={`flex-1 min-h-screen ${collapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+          {/* Mobile sidebar overlay */}
+          {mobileOpen && (
+            <div 
+              className="fixed inset-0 bg-black/20 z-30 lg:hidden" 
+              onClick={() => setMobileOpen(false)}
+            />
+          )}
+        </>
+      )}
+
+      <main className={`flex-1 min-h-screen ${!isCourseWeekView ? (collapsed ? 'lg:pl-20' : 'lg:pl-64') : ''}`}>
         {/* Desktop Header */}
         <div className="sticky top-0 z-10 h-16 border-b bg-white shadow hidden lg:flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
+            {isCourseWeekView && (
+              <Button variant="ghost" size="icon" onClick={handleBack} className="mr-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
             {location.pathname.includes('/course/') && courseTitle && (
               <div className="font-bold text-xl">
                 {courseTitle}
@@ -230,14 +249,6 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
           {children}
         </div>
       </main>
-
-      {/* Mobile sidebar overlay */}
-      {mobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-30 lg:hidden" 
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
     </div>
   );
 };

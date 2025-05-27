@@ -61,6 +61,7 @@ export interface Course {
   createdAt?: string;
   courseUrl?: string;
   completedDays?: number[];
+  daysCompletedPerDuration?: string;
   modules?: any[];
   reviews?: any[];
   isActive?: boolean;
@@ -172,10 +173,10 @@ export const useEnrollCourse = () => {
 
 interface UpdateProgressParams {
   courseId: string;
-  progress: number;
-  status: 'enrolled' | 'started' | 'completed';
+  completedDays: number[];
   token: string;
-  completedDays?: number[];
+  progress?: number;
+  status?: 'enrolled' | 'started' | 'completed';
 }
 
 // Update course progress and status
@@ -183,10 +184,10 @@ export const useUpdateProgress = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ courseId, progress, status, token, completedDays }: UpdateProgressParams) => {
+    mutationFn: async ({ courseId, completedDays, token, progress, status }: UpdateProgressParams) => {
       const response = await axios.put(
         `/api/courses/${courseId}/progress`,
-        { progress, status, completedDays },
+        { completedDays, progress, status },
         {
           headers: {
             Authorization: `Bearer ${token}`

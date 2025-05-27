@@ -40,24 +40,45 @@ const Dashboard = () => {
   const sendMessageMutation = useSendMessage();
   const [selectedDate] = useState<Date>(new Date());
 
-  // Calculate progress for a single course
-  const calculateCourseProgress = (course: any) => {
-    if (!course.duration || !course.roadmap) return course.progress || 0;
-    const totalDurationDays = parseInt(course.duration.split(' ')[0]);
-    const availableDays = course.roadmap.length;
-    const completedDays = Math.ceil(((course.progress || 0) / 100) * availableDays);
+  // Calculate overall progress
+  const calculateTotalProgress = () => {
+    if (!enrolledCourses?.length) return 0;
     
-    // Calculate progress based on completed days relative to total duration
-    return Math.min(100, Math.round((completedDays / totalDurationDays) * 100));
+    const totalProgress = enrolledCourses.reduce((acc, course) => {
+      if (course.daysCompletedPerDuration) {
+        const [completed, total] = course.daysCompletedPerDuration.split('/').map(Number);
+        return acc + Math.round((completed / total) * 100);
+      }
+      
+      if (course.duration && course.completedDays) {
+    const totalDurationDays = parseInt(course.duration.split(' ')[0]);
+        const completedDaysCount = course.completedDays.length;
+        return acc + Math.min(100, Math.round((completedDaysCount / totalDurationDays) * 100));
+      }
+      
+      return acc + (course.progress || 0);
+    }, 0);
+    
+    return Math.round(totalProgress / enrolledCourses.length);
   };
 
-  // Calculate total progress across all courses
-  const totalProgress = enrolledCourses?.length
-    ? Math.round(
-        enrolledCourses.reduce((sum, course) => sum + calculateCourseProgress(course), 0) / 
-        enrolledCourses.length
-      )
-    : 0;
+  const totalProgress = calculateTotalProgress();
+    
+  // Calculate progress for each course
+  const calculateCourseProgress = (course) => {
+    if (course.daysCompletedPerDuration) {
+      const [completed, total] = course.daysCompletedPerDuration.split('/').map(Number);
+      return Math.round((completed / total) * 100);
+    }
+    
+    if (course.duration && course.completedDays) {
+      const totalDurationDays = parseInt(course.duration.split(' ')[0]);
+      const completedDaysCount = course.completedDays.length;
+      return Math.min(100, Math.round((completedDaysCount / totalDurationDays) * 100));
+    }
+    
+    return course.progress || 0;
+  };
 
   // Group messages by course and instructor
   const messagesByCourse = React.useMemo(() => {
@@ -219,53 +240,41 @@ const Dashboard = () => {
                 <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-4">
                     {enrolledCourses?.map((course) => {
-                      // Calculate progress based on course duration
-                      const calculateProgress = () => {
-                        if (!course.duration || !course.roadmap) return course.progress || 0;
-                        const totalDurationDays = parseInt(course.duration.split(' ')[0]);
-                        const availableDays = course.roadmap.length;
-                        const completedDays = Math.ceil(((course.progress || 0) / 100) * availableDays);
-                        
-                        // Calculate progress based on completed days relative to total duration
-                        return Math.min(100, Math.round((completedDays / totalDurationDays) * 100));
-                      };
-
-                      const actualProgress = calculateProgress();
-                      const isFullyComplete = (course.progress === 100) && 
-                        (!course.duration || parseInt(course.duration.split(' ')[0]) <= (course.roadmap?.length || 0));
+                      const actualProgress = calculateCourseProgress(course);
+                      const isFullyComplete = actualProgress === 100;
 
                       return (
-                        <Card 
-                          key={course.id} 
-                          className="p-4 hover:shadow-md transition-all cursor-pointer border-l-4 hover:border-l-primary"
-                          onClick={() => handleCourseClick(course._id || course.id)}
-                        >
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-start">
-                              <div className="space-y-1">
-                                <h3 className="font-medium text-lg">{course.title}</h3>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Users className="h-4 w-4" />
-                                  <span>Instructor: {course.instructor}</span>
-                                </div>
+                      <Card 
+                        key={course.id} 
+                        className="p-4 hover:shadow-md transition-all cursor-pointer border-l-4 hover:border-l-primary"
+                        onClick={() => handleCourseClick(course._id || course.id)}
+                      >
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <h3 className="font-medium text-lg">{course.title}</h3>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Users className="h-4 w-4" />
+                                <span>Instructor: {course.instructor}</span>
                               </div>
+                            </div>
                               <Badge variant={isFullyComplete ? "outline" : "secondary"}>
                                 {actualProgress}% Complete
-                              </Badge>
-                            </div>
+                            </Badge>
+                          </div>
                             <div className="space-y-1">
-                              <Progress 
+                          <Progress 
                                 value={actualProgress} 
                                 className={`h-2 ${isFullyComplete ? "bg-green-100" : ""}`}
-                              />
-                              {course.progress === 100 && !isFullyComplete && (
-                                <p className="text-xs text-blue-600">
-                                  All available content completed
+                          />
+                              {isFullyComplete && (
+                                <p className="text-xs text-green-600">
+                                  Course completed
                                 </p>
                               )}
                             </div>
-                          </div>
-                        </Card>
+                        </div>
+                      </Card>
                       );
                     })}
                   </div>

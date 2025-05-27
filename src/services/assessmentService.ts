@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "@/lib/axios";
 
@@ -137,34 +136,29 @@ export const useUploadAssessmentPDF = () => {
   });
 };
 
+interface QuizSubmission {
+  courseUrl: string;
+  dayNumber: number;
+  title: string;
+  questions: {
+    question: string;
+    options: {
+      text: string;
+      isCorrect: boolean;
+    }[];
+  }[];
+  selectedAnswers: number[];
+  score: number;
+  submittedDate: string;
+}
+
 // New function to submit quiz results to assignments
 export const useSubmitQuizToAssignments = () => {
   return useMutation({
-    mutationFn: async ({ 
-      courseId,
-      dayNumber,
-      title,
-      questions,
-      selectedAnswers,
-      score
-    }: { 
-      courseId: string;
-      dayNumber: number;
-      title: string;
-      questions: any[];
-      selectedAnswers: Record<string, string>;
-      score: number;
-    }) => {
+    mutationFn: async (data: QuizSubmission) => {
       const response = await axios.post(
-        `/api/courses/${courseId}/assignments/quiz-submission`,
-        { 
-          dayNumber,
-          title,
-          questions,
-          selectedAnswers,
-          score,
-          submittedDate: new Date().toISOString()
-        }
+        `/api/quiz-submissions`,
+        data
       );
       return response.data;
     }

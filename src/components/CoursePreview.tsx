@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import CourseCard from "./CourseCard";
 
@@ -12,6 +11,7 @@ const courseData = [
     rating: 4.8,
     students: 12453,
     level: "Beginner" as const,
+    language: "JavaScript",
   },
   {
     id: "2", // Changed from number to string
@@ -22,6 +22,7 @@ const courseData = [
     rating: 4.9,
     students: 8745,
     level: "Intermediate" as const,
+    language: "Python",
   },
   {
     id: "3", // Changed from number to string
@@ -32,6 +33,7 @@ const courseData = [
     rating: 4.7,
     students: 5287,
     level: "Intermediate" as const,
+    language: "Figma",
   },
   {
     id: "4", // Changed from number to string
@@ -42,6 +44,7 @@ const courseData = [
     rating: 4.9,
     students: 3125,
     level: "Advanced" as const,
+    language: "AWS",
   },
   {
     id: "5", // Changed from number to string
@@ -52,6 +55,7 @@ const courseData = [
     rating: 4.6,
     students: 4815,
     level: "Intermediate" as const,
+    language: "React Native",
   },
   {
     id: "6", // Changed from number to string
@@ -62,6 +66,7 @@ const courseData = [
     rating: 4.8,
     students: 6329,
     level: "Beginner" as const,
+    language: "Security Tools",
   },
 ];
 

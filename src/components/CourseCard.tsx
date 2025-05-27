@@ -27,6 +27,8 @@ interface CourseCardProps {
   instructor?: string;
   roadmap?: { day: number; topics: string }[];
   courseUrl?: string;
+  daysCompletedPerDuration?: string;
+  completedDays?: number[];
 }
 
 const CourseCard = ({
@@ -48,7 +50,9 @@ const CourseCard = ({
   onResumeClick,
   instructor,
   roadmap = [],
-  courseUrl
+  courseUrl,
+  daysCompletedPerDuration,
+  completedDays
 }: CourseCardProps) => {
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -80,30 +84,39 @@ const CourseCard = ({
   
   // Calculate progress based on course duration
   const calculateProgress = () => {
-    if (!duration || !roadmap) return progress;
-    const totalDurationDays = parseInt(duration.split(' ')[0]); // Assuming duration is in format "X days"
-    const availableDays = roadmap.length;
-    const completedDays = Math.ceil((progress / 100) * availableDays); // Calculate actual completed days
-    
-    // Calculate progress based on completed days relative to total duration
-    const progressBasedOnDuration = Math.min(100, Math.round((completedDays / totalDurationDays) * 100));
-    
-    // If all available content is completed but there are more days than duration
-    if (progress === 100) {
-      if (availableDays > totalDurationDays) {
-        // Show progress based on total duration days
-        return 100;
-      }
-      // If we have fewer days than duration, show progress based on completed days
-      return progressBasedOnDuration;
+    // If we have daysCompletedPerDuration, use it directly
+    if (typeof daysCompletedPerDuration === 'string') {
+      const [completed, total] = daysCompletedPerDuration.split('/').map(Number);
+      return Math.round((completed / total) * 100);
     }
     
-    // If not all content is completed, show progress based on completed days
-    return progressBasedOnDuration;
+    // If we have completedDays and duration, calculate from those
+    if (completedDays && duration) {
+      const totalDurationDays = parseInt(duration.split(' ')[0]); // Assuming duration is in format "X days"
+      const completedDaysCount = completedDays.length;
+      return Math.min(100, Math.round((completedDaysCount / totalDurationDays) * 100));
+    }
+    
+    // Fallback to progress prop
+    return progress;
   };
 
   const actualProgress = calculateProgress();
-  const isFullyComplete = progress === 100 && (!duration || parseInt(duration.split(' ')[0]) <= roadmap.length);
+  const isFullyComplete = actualProgress === 100;
+
+  // Get the actual days completed text
+  const getDaysCompletedText = () => {
+    if (daysCompletedPerDuration) {
+      return daysCompletedPerDuration;
+    }
+    if (completedDays && duration) {
+      const totalDays = parseInt(duration.split(' ')[0]);
+      return `${completedDays.length}/${totalDays}`;
+    }
+    return '';
+  };
+
+  const daysCompletedText = getDaysCompletedText();
   
   const renderRatingStars = (rating: number) => {
     return (
@@ -245,7 +258,7 @@ const CourseCard = ({
               <div className="flex-1">
                 <div className="flex justify-between text-xs mb-1">
                   <span>Progress</span>
-                  <span>{actualProgress}%</span>
+                  <span>{daysCompletedText ? `${daysCompletedText} days (${actualProgress}%)` : `${actualProgress}%`}</span>
                 </div>
                 <div className="w-full bg-secondary h-2 rounded-full">
                   <div 
@@ -255,9 +268,9 @@ const CourseCard = ({
                     style={{ width: `${actualProgress}%` }}
                   ></div>
                 </div>
-                {progress === 100 && !isFullyComplete && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    All available content completed
+                {isFullyComplete && (
+                  <p className="text-xs text-green-600 mt-1">
+                    Course completed
                   </p>
                 )}
               </div>
