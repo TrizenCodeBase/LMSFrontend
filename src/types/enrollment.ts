@@ -12,7 +12,7 @@ export interface EnrollmentRequest {
   };
   courseUrl?: string;
   status: 'pending' | 'approved' | 'rejected' | 'deleted';
-  paymentScreenshot: string;
+  transactionScreenshot: string;
   transactionId: string;
   amount: number;
   paymentDate: string;
@@ -23,4 +23,5 @@ export interface EnrollmentRequest {
   deletedAt?: string;
   createdAt: string;
   updatedAt: string;
+  referredBy?: string;
 } 

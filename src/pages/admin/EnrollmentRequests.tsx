@@ -53,6 +53,7 @@ interface EnrollmentRequest {
   createdAt: string;
   deletedAt?: string;
   courseUrl?: string;
+  referredBy?: string;
 }
 
 const EnrollmentRequests = () => {
@@ -682,6 +683,7 @@ const EnrollmentRequests = () => {
                               </TableHead>
                               <TableHead className="w-[120px]">Status</TableHead>
                               <TableHead className="w-[120px]">Screenshot</TableHead>
+                              <TableHead className="w-[150px]">Referred By</TableHead>
                               <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -747,6 +749,11 @@ const EnrollmentRequests = () => {
                           View
                         </Button>
                       </TableCell>
+                                <TableCell className="py-3">
+                                  <Badge variant="outline" className="font-medium">
+                                    {request.referredBy || 'No Referral'}
+                                  </Badge>
+                                </TableCell>
                                 <TableCell className="py-3">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -938,4 +945,3 @@ const EnrollmentRequests = () => {
 };
 
 export default EnrollmentRequests;
-

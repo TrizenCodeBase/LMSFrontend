@@ -349,7 +349,7 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
                           attempt.score >= 70 ? "bg-secondary" : 
                           attempt.score >= 50 ? "bg-primary" : 
                           "bg-destructive"
-                        )} 
+                )} 
                         style={{ width: `${attempt.score}%` }}
               />
             </div>
@@ -1303,54 +1303,54 @@ const CourseWeekView = () => {
             day.mcqs && day.mcqs.length > 0 ? (
               <div key={day.day} className="space-y-1">
                 <div
-                  id={`sidebar-day-${day.day}`}
-                  className={cn(
-                    "flex flex-col w-full p-3 rounded-lg text-sm gap-1 transition-colors text-left",
-                    selectedDay === day.day
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : isDayLocked(day.day)
+              id={`sidebar-day-${day.day}`}
+              className={cn(
+                "flex flex-col w-full p-3 rounded-lg text-sm gap-1 transition-colors text-left",
+                selectedDay === day.day
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : isDayLocked(day.day)
                       ? "bg-gray-100 hover:bg-gray-100 cursor-not-allowed opacity-75"
-                      : "hover:bg-muted",
+                  : "hover:bg-muted",
                     completedDays.includes(day.day) && selectedDay !== day.day ? "text-emerald-600" : selectedDay === day.day ? "text-primary-foreground" : ""
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                       <span className={cn(
                         "font-medium",
                         selectedDay === day.day && "text-primary-foreground"
                       )}>Day {day.day}</span>
-                      {completedDays.includes(day.day) && (
+                  {completedDays.includes(day.day) && (
                         <CheckCircle className={cn(
                           "h-4 w-4",
                           selectedDay === day.day ? "text-primary-foreground" : "text-emerald-600"
                         )} />
-                      )}
-                      {isDayLocked(day.day) && (
-                        <Lock className="h-4 w-4 text-gray-500" />
-                      )}
-                    </div>
+                  )}
+                  {isDayLocked(day.day) && (
+                    <Lock className="h-4 w-4 text-gray-500" />
+                  )}
+                </div>
                     <span className={cn(
                       "text-xs",
                       selectedDay === day.day ? "text-primary-foreground" : completedDays.includes(day.day) ? "text-emerald-600" : "opacity-70"
                     )}>
-                      {completedDays.includes(day.day) 
-                        ? 'Completed' 
-                        : isDayLocked(day.day)
-                        ? 'Locked'
-                        : 'Not Started'}
-                    </span>
-                  </div>
-                  <p className={cn(
+                  {completedDays.includes(day.day) 
+                    ? 'Completed' 
+                    : isDayLocked(day.day)
+                    ? 'Locked'
+                    : 'Not Started'}
+                </span>
+              </div>
+              <p className={cn(
                     "text-xs line-clamp-2",
-                    selectedDay === day.day
-                      ? "text-primary-foreground/80"
+                selectedDay === day.day 
+                  ? "text-primary-foreground/80"
                       : completedDays.includes(day.day)
                       ? "text-emerald-600/80"
-                      : "text-muted-foreground"
-                  )}>
-                    {day.topics}
-                  </p>
+                  : "text-muted-foreground"
+              )}>
+                {day.topics}
+              </p>
                 </div>
 
                 <div className="ml-3 pl-3 border-l space-y-1">
@@ -1421,7 +1421,7 @@ const CourseWeekView = () => {
                 }}
                 className={cn(
                   "flex flex-col w-full p-3 rounded-lg text-sm gap-1 transition-colors text-left",
-                  selectedDay === day.day
+                  selectedDay === day.day 
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
                     : isDayLocked(day.day)
                     ? "bg-gray-100 hover:bg-gray-100 cursor-not-allowed opacity-75"
@@ -1466,7 +1466,7 @@ const CourseWeekView = () => {
                 )}>
                   {day.topics}
                 </p>
-              </button>
+            </button>
             )
           ))}
 
@@ -1541,7 +1541,7 @@ const CourseWeekView = () => {
                   <div className="flex items-center gap-1">
                     <CheckCircle className="h-3.5 w-3.5" />
                     <span>{completedDays.length}/{course?.duration ? extractDurationDays(course.duration) : course?.roadmap.length || 0} days completed</span>
-                  </div>
+          </div>
                 </div>
               </div>
               <Progress 
@@ -1551,8 +1551,8 @@ const CourseWeekView = () => {
             </div>
 
             <ScrollArea className="flex-1 px-3">
-              <SidebarContent />
-            </ScrollArea>
+            <SidebarContent />
+          </ScrollArea>
           </div>
         </div>
 
@@ -1585,7 +1585,7 @@ const CourseWeekView = () => {
             </div>
             <ScrollArea className="flex-1">
               <div className="px-3">
-                <SidebarContent />
+            <SidebarContent />
               </div>
             </ScrollArea>
           </SheetContent>
@@ -1639,17 +1639,17 @@ const CourseWeekView = () => {
                                 </div>
                               ) : (
                                 <div className="absolute inset-0">
-                                  <MemoizedVideoPlayer 
-                                    videoUrl={currentDay.video} 
-                                    onVideoComplete={handleVideoCompleteCallback}
-                                    isEnabled={isVideoEnabled(currentDay.day)}
-                                  />
+                    <MemoizedVideoPlayer 
+                          videoUrl={currentDay.video} 
+                      onVideoComplete={handleVideoCompleteCallback}
+                          isEnabled={isVideoEnabled(currentDay.day)}
+                        />
                                 </div>
                               )}
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
+                      </CardContent>
+                    </Card>
                     </div>
 
                     {/* Progress Actions */}
@@ -1666,17 +1666,17 @@ const CourseWeekView = () => {
                               </p>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                              <Button
+                  <Button
                                 onClick={() => handleDaySelect(selectedDay - 1)}
-                                variant="outline"
+                    variant="outline"
                                 disabled={selectedDay === 1}
                                 className="w-full sm:w-auto sm:min-w-[140px] h-10"
-                              >
+                  >
                                 <ArrowLeft className="h-4 w-4 mr-2" />
                                 Previous Day
-                              </Button>
+                  </Button>
                               {(!course?.roadmap.find(d => d.day === selectedDay)?.mcqs?.length) ? (
-                                <Button
+                  <Button
                                   onClick={() => {
                                     if (completedDays.includes(selectedDay)) {
                                       handleVideoMarkComplete();
@@ -1687,27 +1687,27 @@ const CourseWeekView = () => {
                                   disabled={isMarkingVideo}
                                   size="lg"
                                   variant={completedDays.includes(selectedDay) ? "outline" : "default"}
-                                  className={cn(
+                    className={cn(
                                     "w-full sm:w-auto sm:min-w-[200px] h-10",
                                     completedDays.includes(selectedDay) && "text-emerald-600 hover:text-emerald-600 border-emerald-600 hover:bg-emerald-50"
-                                  )}
-                                >
+                    )}
+                  >
                                   {isMarkingVideo ? (
-                                    <>
+                      <>
                                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                      <span>Updating...</span>
-                                    </>
+                        <span>Updating...</span>
+                      </>
                                   ) : completedDays.includes(selectedDay) ? (
-                                    <>
-                                      <span>Completed</span>
+                          <>
+                            <span>Completed</span>
                                       <CheckCircle className="h-4 w-4 ml-2" />
-                                    </>
-                                  ) : (
-                                    <>
+                          </>
+                        ) : (
+                          <>
                                       <span>Complete & Continue</span>
                                       <ArrowRight className="h-4 w-4 ml-2" />
-                                    </>
-                                  )}
+                          </>
+                        )}
                                 </Button>
                               ) : (
                                 <Button
@@ -1734,33 +1734,33 @@ const CourseWeekView = () => {
                                     <>
                                       <span>Complete & Start Quiz</span>
                                       <ArrowRight className="h-4 w-4 ml-2" />
-                                    </>
-                                  )}
-                                </Button>
+                      </>
+                    )}
+                  </Button>
                               )}
                             </div>
                           </div>
                         </CardContent>
                       </Card>
-                    </div>
+                </div>
 
-                    {/* Tabbed Content */}
+                {/* Tabbed Content */}
                     <div className="max-w-[1920px] mx-auto px-4 sm:px-6 mt-6">
                       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="w-full border-b justify-start rounded-none h-auto p-0 bg-transparent mb-6 overflow-x-auto flex-nowrap">
-                          <TabsTrigger 
-                            value="notes" 
+                    <TabsTrigger 
+                      value="notes" 
                             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary px-4 py-2.5 text-sm font-medium whitespace-nowrap"
-                          >
-                            Notes
-                          </TabsTrigger>
-                          <TabsTrigger 
+                    >
+                      Notes
+                    </TabsTrigger>
+                    <TabsTrigger 
                             value="transcript" 
                             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary px-4 py-2.5 text-sm font-medium whitespace-nowrap"
-                          >
+                    >
                             Transcript
-                          </TabsTrigger>
-                        </TabsList>
+                    </TabsTrigger>
+                  </TabsList>
 
                         <TabsContent value="notes" className="mt-4 sm:mt-6 focus-visible:outline-none focus-visible:ring-0">
                           <NotesSection
@@ -1775,22 +1775,22 @@ const CourseWeekView = () => {
                         <TabsContent value="transcript" className="mt-4 sm:mt-6 focus-visible:outline-none focus-visible:ring-0">
                           <Card className="border">
                             <CardContent className="p-4 sm:p-6">
-                              {currentDay.transcript ? (
+                        {currentDay.transcript ? (
                                 <div className="prose prose-sm sm:prose max-w-none">
                                   <p className="text-sm sm:text-base leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                                    {currentDay.transcript}
-                                  </p>
+                            {currentDay.transcript}
+                          </p>
                                 </div>
-                              ) : (
+                        ) : (
                                 <div className="text-center py-6">
-                                  <p className="text-sm text-muted-foreground italic">
-                                    No transcript available for this video.
-                                  </p>
+                          <p className="text-sm text-muted-foreground italic">
+                            No transcript available for this video.
+                          </p>
                                 </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </TabsContent>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
                       </Tabs>
                     </div>
                   </div>
@@ -1895,8 +1895,8 @@ const CourseWeekView = () => {
                         </div>
                       ) : (
                         <>
-                          {!showQuiz ? (
-                            <>
+                            {!showQuiz ? (
+                              <>
                               {quizResults[currentDay.day] && quizResults[currentDay.day].length > 0 ? (
                                 <Card className="p-4 sm:p-8 mt-6 sm:mt-8">
                                   <div className="space-y-6">
@@ -1924,16 +1924,16 @@ const CourseWeekView = () => {
                                           )}
                                         </div>
                                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                          <Button 
-                                            onClick={() => setShowQuiz(true)}
+                            <Button 
+                              onClick={() => setShowQuiz(true)}
                                             size="lg"
                                             className="w-full sm:w-auto min-w-[200px] text-base sm:text-lg py-4 sm:py-6 bg-primary hover:bg-primary/90"
-                                          >
+                            >
                                             <div className="flex items-center gap-2">
                                               <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5" />
                                               <span>Try Again</span>
                                             </div>
-                                          </Button>
+                            </Button>
                                           <Button
                                             onClick={() => handleCompleteAndContinue(currentDay.day)}
                                             size="lg"
@@ -1947,8 +1947,8 @@ const CourseWeekView = () => {
                                                   <CheckCircle className="h-4 sm:h-5 w-4 sm:w-5" />
                                                   <span>Complete & Continue</span>
                                                 </>
-                                              ) : (
-                                                <>
+                            ) : (
+                              <>
                                                   <Lock className="h-4 sm:h-5 w-4 sm:w-5" />
                                                   <span>Complete Day First</span>
                                                 </>
@@ -1968,24 +1968,24 @@ const CourseWeekView = () => {
                                       <p className="text-muted-foreground">
                                         Complete this quiz to track your understanding
                                       </p>
-                                    </div>
+                              </div>
                                     <div className="flex justify-center">
-                                      <Button 
-                                        onClick={() => setShowQuiz(true)}
+                                <Button 
+                                  onClick={() => setShowQuiz(true)}
                                         size="lg"
                                         className="w-full sm:w-auto min-w-[200px] text-base sm:text-lg py-4 sm:py-6 bg-primary hover:bg-primary/90"
-                                      >
+                                >
                                         <div className="flex items-center gap-2">
                                           <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5" />
                                           <span>Start Quiz</span>
                                         </div>
-                                      </Button>
+                                </Button>
                                     </div>
                                   </div>
                                 </Card>
-                              )}
-                            </>
-                          ) : (
+                            )}
+                              </>
+                        ) : (
                             <div className="relative">
                               <MCQQuiz
                                 questions={currentDay.mcqs}
@@ -2010,15 +2010,15 @@ const CourseWeekView = () => {
                                   <Minimize2 className="h-5 w-5" />
                                 ) : (
                                   <Maximize2 className="h-5 w-5" />
-                                )}
+                        )}
                               </Button>
-                            </div>
-                          )}
+                    </div>
+                  )}
                         </>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
 
                 {/* Mobile Back Button */}
                 <div className="fixed bottom-4 left-4 sm:hidden">
