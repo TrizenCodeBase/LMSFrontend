@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,11 @@ import {
   Award,
   DollarSign,
   Save,
-  Loader2
+  Loader2,
+  Search,
+  X,
+  Pencil,
+  GraduationCap
 } from "lucide-react";
 import {
   Dialog,
@@ -49,19 +53,40 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import axios from '@/lib/axios';
+import { useUpdateInstructorStatus } from '@/services/instructorService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 // Types
 interface Instructor {
   _id: string;
   name: string;
   email: string;
+  profilePicture?: string;
+  userId?: string;
+  bio?: string;
+  phone?: string;
+  location?: string;
+  instructorId?: string;
   instructorProfile: {
     specialty: string;
     experience: number;
+    courses: {
+      _id: string;
+      title: string;
+      status: string;
+    }[];
+    rating: number;
+    totalReviews: number;
+    teachingHours: number;
     bio?: string;
     phone?: string;
     location?: string;
-    avatar?: string;
     socialLinks?: {
       linkedin?: string;
       twitter?: string;
@@ -71,18 +96,6 @@ interface Instructor {
   status: 'pending' | 'approved' | 'rejected';
   isActive?: boolean;
   createdAt: string;
-  stats?: {
-    totalStudents: number;
-    totalCourses: number;
-    averageRating: number;
-    teachingHours: number;
-  };
-  recentReviews?: Array<{
-    student: string;
-    rating: number;
-    comment: string;
-    date: string;
-  }>;
 }
 
 interface Course {
@@ -127,6 +140,8 @@ const getMockInstructorReviews = () => {
 const InstructorManagement = () => {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
@@ -137,6 +152,21 @@ const InstructorManagement = () => {
   const [courseUpdates, setCourseUpdates] = useState<{[key: string]: number}>({});
   const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
   const { toast } = useToast();
+  const updateInstructorStatus = useUpdateInstructorStatus();
+
+  // Filter instructors based on search query and status
+  const filteredInstructors = React.useMemo(() => {
+    return instructors.filter(instructor => {
+      const matchesSearch = 
+        instructor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        instructor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        instructor.instructorProfile.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || instructor.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [instructors, searchQuery, statusFilter]);
 
   useEffect(() => {
     fetchInstructors();
@@ -145,7 +175,12 @@ const InstructorManagement = () => {
   const fetchInstructors = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get<Instructor[]>('/api/admin/instructors');
+      // Fetch instructors with their complete profiles
+      const response = await axios.get<Instructor[]>('/api/admin/instructors', {
+        params: {
+          include: 'profile,courses,stats'
+        }
+      });
       setInstructors(response.data);
     } catch (error) {
       console.error('Error fetching instructors:', error);
@@ -161,8 +196,9 @@ const InstructorManagement = () => {
 
   const handleStatusUpdate = async (instructorId: string, newStatus: 'approved' | 'rejected') => {
     try {
-      await axios.put(`/api/admin/instructors/${instructorId}/status`, {
-        status: newStatus
+      await updateInstructorStatus.mutateAsync({ 
+        instructorId, 
+        status: newStatus 
       });
       
       toast({
@@ -182,27 +218,30 @@ const InstructorManagement = () => {
     }
   };
 
-  const handleViewDetails = (instructor: Instructor) => {
-    // Enhance the instructor with mock data for demonstration
-    const enhancedInstructor = {
-      ...instructor,
-      instructorProfile: {
-        ...instructor.instructorProfile,
-        bio: instructor.instructorProfile.bio || 'Passionate educator specialized in ' + instructor.instructorProfile.specialty,
-        phone: instructor.instructorProfile.phone || '+1 (555) 123-4567',
-        location: instructor.instructorProfile.location || 'San Francisco, CA',
-        socialLinks: instructor.instructorProfile.socialLinks || {
-          linkedin: 'https://linkedin.com/in/instructor',
-          twitter: 'https://twitter.com/instructor',
-          website: 'https://instructor-website.com'
-        }
-      },
-      stats: getMockInstructorStats(instructor._id),
-      recentReviews: getMockInstructorReviews()
-    };
-    
-    setSelectedInstructor(enhancedInstructor);
+  const handleViewDetails = async (instructor: Instructor) => {
+    // Show dialog immediately with existing data
+    setSelectedInstructor(instructor);
     setIsDetailsDialogOpen(true);
+
+    try {
+      // Fetch fresh instructor data using the list endpoint with a filter
+      const response = await axios.get<Instructor[]>('/api/admin/instructors', {
+        params: {
+          instructorId: instructor._id,  // Changed from id to instructorId
+          include: 'profile,courses,stats',
+          single: true  // Add flag to get single instructor
+        }
+      });
+      
+      // Find the exact instructor we want by matching the ID
+      const updatedInstructor = response.data.find(inst => inst._id === instructor._id);
+      if (updatedInstructor) {
+        setSelectedInstructor(updatedInstructor);
+      }
+    } catch (error) {
+      console.error('Error fetching instructor details:', error);
+      // Don't show error toast since we're showing existing data
+    }
   };
 
   const handleSendMessage = (instructor: Instructor) => {
@@ -361,104 +400,296 @@ const InstructorManagement = () => {
     const fields = [
       instructor.name,
       instructor.email,
-      instructor.instructorProfile.specialty,
-      instructor.instructorProfile.experience,
-      instructor.instructorProfile.bio,
-      instructor.instructorProfile.phone,
-      instructor.instructorProfile.location,
-      instructor.instructorProfile.socialLinks?.linkedin,
-      instructor.instructorProfile.socialLinks?.twitter,
-      instructor.instructorProfile.socialLinks?.website,
+      instructor.profilePicture,
+      instructor.bio,
+      instructor.phone,
+      instructor.location,
+      instructor.instructorProfile?.specialty,
+      instructor.instructorProfile?.experience,
+      instructor.instructorProfile?.socialLinks?.linkedin,
     ];
     
     const filledFields = fields.filter(Boolean).length;
     return Math.round((filledFields / fields.length) * 100);
   };
 
+  // Add a function to get instructor ID in the correct format
+  const getInstructorId = (instructor: Instructor) => {
+    return instructor.instructorId || `TIN${instructor._id.substring(0, 4)}`;
+  };
+
   return (
     <AdminLayout>
-      <div className="p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Instructor Management</CardTitle>
+      <div className="h-[calc(100vh-4rem)] flex flex-col">
+        <div className="p-3 space-y-3 flex-shrink-0 border-b bg-background">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <div>
+                <h1 className="text-lg font-semibold">Instructor Management</h1>
+                <p className="text-sm text-muted-foreground">
+                  Manage and monitor all instructors in the platform
+                </p>
+              </div>
+              <div className="flex flex-row gap-2">
+                <div className="relative flex-1 sm:flex-none">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search instructors..."
+                    className="pl-8 h-9 w-full sm:w-[200px] text-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9 w-[130px] text-sm">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+              <Card className="bg-primary/5">
+                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
+                  <CardTitle className="text-xs font-medium">Total Instructors</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
+                <CardContent className="py-2 px-3">
+                  <div className="text-xl font-bold">{instructors.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {instructors.filter(i => i.status === 'approved').length} active
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-yellow-500/5">
+                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
+                  <CardTitle className="text-xs font-medium">Pending</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="py-2 px-3">
+                  <div className="text-xl font-bold">
+                    {instructors.filter(i => i.status === 'pending').length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Awaiting review</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-green-500/5">
+                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
+                  <CardTitle className="text-xs font-medium">Avg. Experience</CardTitle>
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="py-2 px-3">
+                  <div className="text-xl font-bold">
+                    {Math.round(instructors.reduce((acc, curr) => acc + curr.instructorProfile.experience, 0) / instructors.length || 0)}y
+                  </div>
+                  <p className="text-xs text-muted-foreground">Years teaching</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-500/5">
+                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
+                  <CardTitle className="text-xs font-medium">Top Specialty</CardTitle>
+                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="py-2 px-3">
+                  <div className="text-xl font-bold truncate">
+                    {(() => {
+                      const specialties = instructors.map(i => i.instructorProfile.specialty);
+                      const counts = specialties.reduce((acc, curr) => {
+                        acc[curr] = (acc[curr] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>);
+                      const max = Math.max(...Object.values(counts));
+                      return Object.keys(counts).find(key => counts[key] === max) || 'N/A';
+                    })()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Most common</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 p-3 bg-muted/5">
+          <div className="h-full rounded-md border bg-background shadow-sm overflow-hidden">
+            <div className="overflow-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Specialty</TableHead>
-                    <TableHead>Experience</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Registered On</TableHead>
-                    <TableHead>Actions</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-[50px] py-2">S.No</TableHead>
+                    <TableHead className="w-[100px] py-2">ID</TableHead>
+                    <TableHead className="py-2">Name</TableHead>
+                    <TableHead className="hidden md:table-cell py-2">Email</TableHead>
+                    <TableHead className="hidden lg:table-cell py-2">Specialty</TableHead>
+                    <TableHead className="hidden lg:table-cell w-[90px] py-2">Exp.</TableHead>
+                    <TableHead className="w-[90px] py-2">Status</TableHead>
+                    <TableHead className="hidden md:table-cell w-[100px] py-2">Registered</TableHead>
+                    <TableHead className="w-[60px] text-right py-2"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        Loading...
+                      <TableCell colSpan={9} className="h-[200px]">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <p className="text-sm text-muted-foreground">Loading instructors...</p>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ) : instructors.length === 0 ? (
+                  ) : filteredInstructors.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        No instructor applications found.
+                      <TableCell colSpan={9} className="h-[200px]">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Users className="h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">No instructors found</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    instructors.map((instructor) => (
-                      <TableRow key={instructor._id}>
-                        <TableCell className="font-medium">{instructor.name}</TableCell>
-                        <TableCell>{instructor.email}</TableCell>
-                        <TableCell>{instructor.instructorProfile.specialty}</TableCell>
-                        <TableCell>{instructor.instructorProfile.experience} years</TableCell>
-                        <TableCell>{getStatusBadge(instructor.status)}</TableCell>
-                        <TableCell>
-                          {new Date(instructor.createdAt).toLocaleDateString()}
+                    filteredInstructors.map((instructor, index) => (
+                      <TableRow key={instructor._id} className="hover:bg-muted/50">
+                        <TableCell className="py-2 font-medium">{index + 1}</TableCell>
+                        <TableCell className="py-2">
+                          <code className="px-1.5 py-0.5 rounded bg-muted/50 text-xs">
+                            {getInstructorId(instructor)}
+                          </code>
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8 border border-muted">
+                              {instructor.profilePicture ? (
+                                <AvatarImage 
+                                  src={instructor.profilePicture} 
+                                  alt={instructor.name}
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <AvatarFallback 
+                                  className="bg-primary/10 text-primary text-xs"
+                                  title={instructor.name}
+                                >
+                                  {getInitials(instructor.name)}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className="flex flex-col min-w-[140px]">
+                              <p className="text-sm font-medium leading-none">
+                                {instructor.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {instructor.instructorProfile.specialty}
+                              </p>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                          {instructor.status === 'pending' && (
-                            <div className="flex gap-2">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                              {instructor.email}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-normal bg-muted/50">
+                            {instructor.instructorProfile.specialty}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="tabular-nums">
+                              {instructor.instructorProfile.experience} years
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              instructor.status === 'approved' 
+                                ? 'default' 
+                                : instructor.status === 'pending'
+                                ? 'secondary'
+                                : 'destructive'
+                            }
+                            className={
+                              instructor.status === 'approved'
+                                ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20'
+                                : instructor.status === 'pending'
+                                ? 'bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20'
+                                : 'bg-red-500/10 text-red-600 hover:bg-red-500/20'
+                            }
+                          >
+                            {instructor.status.charAt(0).toUpperCase() + instructor.status.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm tabular-nums">
+                          {new Date(instructor.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            {instructor.status === 'pending' ? (
+                              <>
                               <Button
                                 size="sm"
                                 onClick={() => handleStatusUpdate(instructor._id, 'approved')}
-                                className="bg-green-600 hover:bg-green-700"
+                                  className="bg-green-500 hover:bg-green-600 text-white transition-colors"
                               >
-                                Approve
+                                  <CheckCircle2 className="h-4 w-4" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => handleStatusUpdate(instructor._id, 'rejected')}
+                                  className="hover:bg-red-600/90 transition-colors"
                               >
-                                Reject
+                                  <X className="h-4 w-4" />
                               </Button>
-                            </div>
-                          )}
-                            
-                            {instructor.status !== 'pending' && (
+                              </>
+                            ) : (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <MoreHorizontal className="h-4 w-4 mr-1" />
-                                    Actions
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-8 w-8 p-0 hover:bg-muted transition-colors"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleViewDetails(instructor)}>
+                                <DropdownMenuContent 
+                                  align="end" 
+                                  className="w-[160px] animate-in fade-in-0 zoom-in-95"
+                                >
+                                  <DropdownMenuItem 
+                                    onClick={() => handleViewDetails(instructor)}
+                                    className="cursor-pointer"
+                                  >
                                     <Eye className="h-4 w-4 mr-2" />
                                     View Details
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleSendMessage(instructor)}>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleSendMessage(instructor)}
+                                    className="cursor-pointer"
+                                  >
                                     <MessageCircle className="h-4 w-4 mr-2" />
                                     Send Message
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleViewCourses(instructor)}>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleViewCourses(instructor)}
+                                    className="cursor-pointer"
+                                  >
                                     <BookOpen className="h-4 w-4 mr-2" />
                                     View Courses
                                   </DropdownMenuItem>
@@ -466,18 +697,18 @@ const InstructorManagement = () => {
                                   {instructor.isActive !== false ? (
                                     <DropdownMenuItem 
                                       onClick={() => handleToggleActive(instructor, 'suspend')}
-                                      className="text-red-600"
+                                      className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
                                     >
                                       <AlertTriangle className="h-4 w-4 mr-2" />
-                                      Suspend Instructor
+                                      Suspend
                                     </DropdownMenuItem>
                                   ) : (
                                     <DropdownMenuItem 
                                       onClick={() => handleToggleActive(instructor, 'reactivate')}
-                                      className="text-green-600"
+                                      className="text-green-600 cursor-pointer focus:text-green-600 focus:bg-green-50"
                                     >
                                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                                      Reactivate Instructor
+                                      Reactivate
                                     </DropdownMenuItem>
                                   )}
                                 </DropdownMenuContent>
@@ -491,388 +722,176 @@ const InstructorManagement = () => {
                 </TableBody>
               </Table>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
       
-      {/* Enhanced Instructor Details Dialog */}
+      {/* Instructor Details Dialog */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-[1000px] p-0 overflow-hidden bg-white rounded-lg">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle className="text-2xl">Instructor Profile</DialogTitle>
             <DialogDescription>
-              Comprehensive instructor information and performance data
+              Viewing detailed information for {selectedInstructor?.name}
             </DialogDescription>
           </DialogHeader>
-          
-          {selectedInstructor && (
-            <Tabs defaultValue="profile">
-              <TabsList className="mb-4">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="stats">Performance</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="profile" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Left column - Basic info and avatar */}
-                  <div className="space-y-6">
-                    <div className="flex flex-col items-center space-y-4">
-                      <Avatar className="h-24 w-24">
-                        {selectedInstructor.instructorProfile.avatar ? (
-                          <AvatarImage src={selectedInstructor.instructorProfile.avatar} alt={selectedInstructor.name} />
+          <div className="grid grid-cols-[300px_1fr]">
+            {/* Left Column - Profile Info */}
+            <div className="p-6 bg-card border-r">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="relative">
+                  <Avatar className="h-32 w-32 border-4 border-background">
+                    {selectedInstructor?.profilePicture ? (
+                      <AvatarImage 
+                        src={selectedInstructor.profilePicture} 
+                        alt={selectedInstructor?.name}
+                        className="object-cover"
+                      />
                         ) : (
-                          <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                            {getInitials(selectedInstructor.name)}
+                      <AvatarFallback className="text-2xl">
+                        {selectedInstructor?.name ? getInitials(selectedInstructor.name) : 'IN'}
                           </AvatarFallback>
                         )}
                       </Avatar>
-                      
-                      <div className="text-center">
-                        <h3 className="font-semibold text-xl">{selectedInstructor.name}</h3>
-                        <p className="text-muted-foreground">Instructor · {selectedInstructor.instructorProfile.specialty}</p>
                       </div>
                       
-                      <div className="w-full">
-                        <p className="text-sm text-muted-foreground mb-1 flex justify-between">
-                          <span>Profile Completion</span>
-                          <span>{getProfileCompletion(selectedInstructor)}%</span>
+                <div>
+                  <h3 className="text-xl font-semibold">{selectedInstructor?.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedInstructor ? getInstructorId(selectedInstructor) : ''}
                         </p>
-                        <Progress value={getProfileCompletion(selectedInstructor)} className="h-2" />
+                  <Badge variant="secondary" className="mt-2">Instructor</Badge>
                       </div>
                     </div>
                     
+              <div className="mt-8 space-y-6">
                     <div className="space-y-3">
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{selectedInstructor.email}</span>
+                  <h4 className="text-sm font-semibold">Contact Information</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span>{selectedInstructor?.email}</span>
                       </div>
-                      
-                      {selectedInstructor.instructorProfile.phone && (
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{selectedInstructor.instructorProfile.phone}</span>
+                    {selectedInstructor?.phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedInstructor.phone}</span>
                         </div>
                       )}
-                      
-                      {selectedInstructor.instructorProfile.location && (
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{selectedInstructor.instructorProfile.location}</span>
+                    {selectedInstructor?.location && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedInstructor.location}</span>
                         </div>
                       )}
                     </div>
-                    
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm">Status</h4>
-                      <div className="flex items-center">
-                        {getStatusBadge(selectedInstructor.status)}
-                        
-                        {selectedInstructor.isActive === false && (
-                          <Badge variant="destructive" className="ml-2">Account Suspended</Badge>
-                        )}
                       </div>
                       
-                      <div className="pt-2">
-                        <p className="text-sm text-muted-foreground">
-                          Registered on {new Date(selectedInstructor.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* Social links */}
-                    {selectedInstructor.instructorProfile.socialLinks && (
-                      <div className="space-y-3 pt-2">
-                        <h4 className="font-medium text-sm">Social Links</h4>
-                        <div className="space-y-2">
-                          {selectedInstructor.instructorProfile.socialLinks.linkedin && (
-                            <div className="flex items-center">
-                              <Linkedin className="h-4 w-4 mr-2 text-muted-foreground" />
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold">Social Profiles</h4>
+                  <div className="space-y-3">
+                    {selectedInstructor?.instructorProfile?.socialLinks?.linkedin && (
                               <a 
                                 href={selectedInstructor.instructorProfile.socialLinks.linkedin} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="text-sm text-blue-500 hover:underline"
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                               >
+                        <Linkedin className="h-4 w-4" />
                                 LinkedIn Profile
                               </a>
-                            </div>
                           )}
-                          
-                          {selectedInstructor.instructorProfile.socialLinks.twitter && (
-                            <div className="flex items-center">
-                              <Twitter className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <a 
-                                href={selectedInstructor.instructorProfile.socialLinks.twitter} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-500 hover:underline"
-                              >
-                                Twitter Profile
-                              </a>
                             </div>
-                          )}
-                          
-                          {selectedInstructor.instructorProfile.socialLinks.website && (
-                            <div className="flex items-center">
-                              <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <a 
-                                href={selectedInstructor.instructorProfile.socialLinks.website} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-500 hover:underline"
-                              >
-                                Personal Website
-                              </a>
                             </div>
-                          )}
                         </div>
-                      </div>
-                    )}
                   </div>
                   
-                  {/* Right column - Bio and experience */}
-                  <div className="md:col-span-2 space-y-6">
-                    <div>
-                      <h4 className="font-medium mb-2">About</h4>
-                      <p className="text-sm text-muted-foreground">{selectedInstructor.instructorProfile.bio}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium mb-2">Teaching Experience</h4>
-                      <div className="flex items-center space-x-2">
-                        <Badge>{selectedInstructor.instructorProfile.experience} years</Badge>
-                        <span className="text-sm text-muted-foreground">as {selectedInstructor.instructorProfile.specialty} instructor</span>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Quick Stats</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-4 border rounded-lg flex flex-col items-center justify-center">
-                          <BookOpen className="h-5 w-5 text-primary mb-2" />
-                          <p className="text-xl font-semibold">{selectedInstructor.stats?.totalCourses || 0}</p>
-                          <p className="text-xs text-muted-foreground">Courses</p>
-                        </div>
-                        <div className="p-4 border rounded-lg flex flex-col items-center justify-center">
-                          <Users className="h-5 w-5 text-primary mb-2" />
-                          <p className="text-xl font-semibold">{selectedInstructor.stats?.totalStudents || 0}</p>
-                          <p className="text-xs text-muted-foreground">Students</p>
-                        </div>
-                        <div className="p-4 border rounded-lg flex flex-col items-center justify-center">
-                          <Star className="h-5 w-5 text-primary mb-2" />
-                          <p className="text-xl font-semibold">{selectedInstructor.stats?.averageRating || '0.0'}</p>
-                          <p className="text-xs text-muted-foreground">Avg. Rating</p>
-                        </div>
-                        <div className="p-4 border rounded-lg flex flex-col items-center justify-center">
-                          <Clock className="h-5 w-5 text-primary mb-2" />
-                          <p className="text-xl font-semibold">{selectedInstructor.stats?.teachingHours || 0}</p>
-                          <p className="text-xs text-muted-foreground">Teaching Hours</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-3">
-                      <h4 className="font-medium">Administrative Actions</h4>
-                      <div className="flex flex-wrap gap-3">
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            setIsDetailsDialogOpen(false);
-                            handleSendMessage(selectedInstructor);
-                          }}
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Send Message
-                        </Button>
-                        
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => {
-                            setIsDetailsDialogOpen(false);
-                            handleViewCourses(selectedInstructor);
-                          }}
-                        >
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          View Courses
-                        </Button>
-                        
-                        {selectedInstructor.status === 'pending' && (
-                          <>
-                            <Button 
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700"
-                              onClick={() => {
-                                setIsDetailsDialogOpen(false);
-                                handleStatusUpdate(selectedInstructor._id, 'approved');
-                              }}
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Approve Instructor
-                            </Button>
-                            
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => {
-                                setIsDetailsDialogOpen(false);
-                                handleStatusUpdate(selectedInstructor._id, 'rejected');
-                              }}
-                            >
-                              <AlertTriangle className="h-4 w-4 mr-2" />
-                              Reject Instructor
-                            </Button>
-                          </>
-                        )}
-                        
-                        {selectedInstructor.status !== 'pending' && (
-                          selectedInstructor.isActive !== false ? (
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => {
-                                setIsDetailsDialogOpen(false);
-                                handleToggleActive(selectedInstructor, 'suspend');
-                              }}
-                            >
-                              <AlertTriangle className="h-4 w-4 mr-2" />
-                              Suspend Instructor
-                            </Button>
-                          ) : (
-                            <Button 
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700"
-                              onClick={() => {
-                                setIsDetailsDialogOpen(false);
-                                handleToggleActive(selectedInstructor, 'reactivate');
-                              }}
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Reactivate Instructor
-                            </Button>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="stats">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Course Statistics</CardTitle>
+            {/* Right Column - Details */}
+            <div className="p-6">
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <Card className="bg-primary/5">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                    <CardTitle className="text-sm font-medium">
+                      <BookOpen className="h-4 w-4 inline-block mr-2" />
+                      Courses Created
+                    </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="h-[250px] flex items-center justify-center border rounded-lg">
-                          <p className="text-muted-foreground">Course statistics chart placeholder</p>
+                    <div className="text-2xl font-bold">
+                      {selectedInstructor?.instructorProfile?.courses?.length || 0}
                         </div>
                       </CardContent>
                     </Card>
                     
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Student Enrollment</CardTitle>
+                <Card className="bg-primary/5">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                    <CardTitle className="text-sm font-medium">
+                      <Star className="h-4 w-4 inline-block mr-2" />
+                      Rating
+                    </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="h-[250px] flex items-center justify-center border rounded-lg">
-                          <p className="text-muted-foreground">Enrollment chart placeholder</p>
+                    <div className="text-2xl font-bold">
+                      {selectedInstructor?.instructorProfile?.rating || 0}
+                      <span className="text-sm text-muted-foreground">/5</span>
                         </div>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedInstructor?.instructorProfile?.totalReviews || 0} Reviews
+                    </p>
                       </CardContent>
                     </Card>
-                  </div>
                   
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Teaching Activity</CardTitle>
+                <Card className="bg-primary/5">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                    <CardTitle className="text-sm font-medium">
+                      <Clock className="h-4 w-4 inline-block mr-2" />
+                      Teaching Hours
+                    </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="font-medium">Total Courses</p>
-                            <p className="text-3xl font-bold">{selectedInstructor.stats?.totalCourses || 0}</p>
-                          </div>
-                          <div>
-                            <p className="font-medium">Total Students</p>
-                            <p className="text-3xl font-bold">{selectedInstructor.stats?.totalStudents || 0}</p>
-                          </div>
-                          <div>
-                            <p className="font-medium">Teaching Hours</p>
-                            <p className="text-3xl font-bold">{selectedInstructor.stats?.teachingHours || 0}</p>
-                          </div>
-                          <div>
-                            <p className="font-medium">Average Rating</p>
-                            <p className="text-3xl font-bold flex items-center">
-                              {selectedInstructor.stats?.averageRating || '0.0'}
-                              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 ml-1" />
-                            </p>
-                          </div>
-                        </div>
+                    <div className="text-2xl font-bold">
+                      {selectedInstructor?.instructorProfile?.teachingHours || 0}
                       </div>
                     </CardContent>
                   </Card>
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="reviews">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-lg">Student Reviews</h4>
-                    <div className="flex items-center">
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 mr-1" />
-                      <span className="font-semibold">{selectedInstructor.stats?.averageRating || '0.0'}</span>
-                      <span className="text-muted-foreground ml-1">average rating</span>
-                    </div>
+
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5" />
+                    About Me
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedInstructor?.bio || selectedInstructor?.instructorProfile?.bio || 'No bio provided'}
+                  </p>
                   </div>
                   
-                  {selectedInstructor.recentReviews && selectedInstructor.recentReviews.length > 0 ? (
                     <div className="space-y-4">
-                      {selectedInstructor.recentReviews.map((review, index) => (
-                        <Card key={index}>
-                          <CardContent className="pt-6">
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center">
-                                <Avatar className="h-8 w-8 mr-2">
-                                  <AvatarFallback>
-                                    {getInitials(review.student)}
-                                  </AvatarFallback>
-                                </Avatar>
+                  <h4 className="text-lg font-semibold flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Skills & Expertise
+                  </h4>
+                  <div className="space-y-6">
                                 <div>
-                                  <p className="font-medium">{review.student}</p>
-                                  <p className="text-xs text-muted-foreground">{review.date}</p>
+                      <h5 className="text-sm font-medium mb-2">Specialty</h5>
+                      <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                        {selectedInstructor?.instructorProfile?.specialty || 'Not specified'}
+                      </Badge>
                                 </div>
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Experience Level</h5>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium">
+                          {selectedInstructor?.instructorProfile?.experience || 0} Years
+                        </span>
                               </div>
-                              <div className="flex items-center">
-                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                                <span>{review.rating}</span>
                               </div>
                             </div>
-                            <p className="text-sm">{review.comment}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
                     </div>
-                  ) : (
-                    <div className="text-center p-8 border rounded-lg">
-                      <p className="text-muted-foreground">No reviews available for this instructor</p>
                     </div>
-                  )}
                 </div>
-              </TabsContent>
-            </Tabs>
-          )}
-          
-          <DialogFooter className="mt-4">
-            <Button onClick={() => setIsDetailsDialogOpen(false)}>Close</Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
       
@@ -884,8 +903,8 @@ const InstructorManagement = () => {
             </DialogTitle>
             <DialogDescription>
               {confirmAction === 'suspend'
-                ? 'Are you sure you want to suspend this instructor? They will no longer be able to access their account.'
-                : 'Are you sure you want to reactivate this instructor? They will regain access to their account.'}
+                ? `Are you sure you want to suspend ${selectedInstructor?.name}? They will no longer be able to access their account.`
+                : `Are you sure you want to reactivate ${selectedInstructor?.name}? They will regain access to their account.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="sm:justify-end gap-2">
@@ -906,12 +925,13 @@ const InstructorManagement = () => {
       <Dialog open={isCoursesDialogOpen} onOpenChange={setIsCoursesDialogOpen}>
         <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">
+            <DialogTitle>
               Instructor Courses
-              {selectedInstructor && ` - ${selectedInstructor.name}`}
             </DialogTitle>
             <DialogDescription>
-              Manage courses and set pricing
+              {selectedInstructor ? 
+                `Manage courses and pricing for ${selectedInstructor.name}` : 
+                'Manage instructor courses and pricing'}
             </DialogDescription>
           </DialogHeader>
           

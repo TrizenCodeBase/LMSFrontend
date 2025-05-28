@@ -13,13 +13,16 @@ import CourseReviews from '@/components/CourseReviews';
 import axios from '@/lib/axios';
 
 interface RoadmapDay {
+  day: number;
   topics: string;
-  video?: string;
+  video: string;
+  transcript?: string;
   notes?: string;
-  duration?: string;
+  mcqs: MCQQuestion[];
+  code?: string;
+  language?: string;
   description?: string;
   completed?: boolean;
-  day: number;
 }
 
 interface Course {
@@ -28,7 +31,13 @@ interface Course {
   description: string;
   longDescription?: string;
   instructor: string;
-  instructorAvatar?: string;
+  instructorDetails?: {
+    name: string;
+    email: string;
+    profilePicture?: string;
+    bio?: string;
+    userId?: string;
+  };
   thumbnail: string;
   price: number;
   originalPrice?: number;
@@ -136,9 +145,10 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
     try {
       await updateProgressMutation.mutateAsync({ 
         courseId: courseId!, 
+        completedDays: [],
+        token,
         progress: 1, 
-        status: 'started',
-        token 
+        status: 'started'
       });
       
       toast({
@@ -358,13 +368,23 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
 
                 {/* Instructor Info */}
                 <div className="flex items-center gap-4 p-4 bg-card rounded-lg border">
-                  <img 
-                    src={course?.instructorAvatar || 'https://ui-avatars.com/api/?name=' + course?.instructor}
-                    alt={course?.instructor}
-                    className="w-16 h-16 rounded-full border-2 border-border"
-                  />
+                  <div className="w-16 h-16 rounded-full overflow-hidden">
+                    {course?.instructorDetails?.profilePicture ? (
+                      <img 
+                        src={course.instructorDetails.profilePicture}
+                        alt={course.instructorDetails.name || course.instructor}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                   <div>
-                    <p className="font-semibold text-lg">{course?.instructor}</p>
+                    <p className="font-semibold text-lg">{course?.instructorDetails?.name || course?.instructor}</p>
                     <p className="text-sm text-muted-foreground">Course Instructor</p>
                   </div>
                 </div>

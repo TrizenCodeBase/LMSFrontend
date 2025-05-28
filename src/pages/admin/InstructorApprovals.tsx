@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/table';
 import { CheckCircle, XCircle } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { useUpdateInstructorStatus } from '@/services/instructorService';
 
 interface InstructorApplication {
   _id: string;
@@ -37,6 +38,7 @@ interface InstructorApplication {
 const InstructorApprovals = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const updateInstructorStatus = useUpdateInstructorStatus();
 
   const { data: applications, isLoading } = useQuery<InstructorApplication[]>({
     queryKey: ['instructorApplications'],
@@ -46,34 +48,25 @@ const InstructorApprovals = () => {
     },
   });
 
-  const updateApplicationStatus = useMutation({
-    mutationFn: async ({ 
-      id, 
-      status 
-    }: { 
-      id: string; 
-      status: 'approved' | 'rejected' 
-    }) => {
-      await axios.put(`/api/admin/instructor-applications/${id}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['instructorApplications'] });
+  const handleStatusUpdate = async (id: string, status: 'approved' | 'rejected') => {
+    try {
+      await updateInstructorStatus.mutateAsync({ 
+        instructorId: id, 
+        status 
+      });
+      
       toast({
         title: 'Success',
         description: 'Application status updated successfully',
       });
-    },
-    onError: () => {
+    } catch (error) {
+      console.error('Error updating status:', error);
       toast({
         title: 'Error',
         description: 'Failed to update application status',
         variant: 'destructive',
       });
-    },
-  });
-
-  const handleStatusUpdate = (id: string, status: 'approved' | 'rejected') => {
-    updateApplicationStatus.mutate({ id, status });
+    }
   };
 
   if (isLoading) {

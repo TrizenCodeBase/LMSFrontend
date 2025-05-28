@@ -197,14 +197,25 @@ const CourseDetails = () => {
 
                 {/* Instructor Info */}
                 <div className="flex items-center gap-4 p-4 bg-card rounded-lg border">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                  <div className="w-16 h-16 rounded-full overflow-hidden">
+                    {course.instructorDetails?.profilePicture ? (
+                      <img 
+                        src={course.instructorDetails.profilePicture}
+                        alt={course.instructorDetails.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <p className="font-semibold text-lg">{course.instructor}</p>
+                    <p className="font-semibold text-lg">{course.instructorDetails?.name || course.instructor}</p>
                     <p className="text-sm text-muted-foreground">Course Instructor</p>
+                    
                   </div>
                 </div>
               </div>

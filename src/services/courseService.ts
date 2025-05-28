@@ -22,6 +22,8 @@ export interface RoadmapDay {
   mcqs: MCQQuestion[];
   code?: string;
   language?: string;
+  description?: string;
+  completed?: boolean;
 }
 
 export interface Course {
@@ -33,6 +35,13 @@ export interface Course {
   image: string;
   instructor: string;
   instructorId: string;
+  instructorDetails?: {
+    name: string;
+    email: string;
+    profilePicture?: string;
+    bio?: string;
+    userId?: string;
+  };
   duration: string;
   rating: number;
   totalRatings: number;
@@ -97,38 +106,26 @@ export const useCourseDetails = (courseIdOrUrl: string | undefined) => {
       if (!courseIdOrUrl) throw new Error("Course ID or URL is required");
       
       try {
-        // Try the courseUrl endpoint first
-        const response = await axios.get(`/api/courses/url/${courseIdOrUrl}`);
+        // Use the main endpoint which handles both IDs and URLs
+        const response = await axios.get(`/api/courses/${courseIdOrUrl}`);
         if (response.data) {
           return response.data as Course;
         }
       } catch (error: any) {
-        // If not found by URL, try the regular course endpoint
-        try {
-          const idResponse = await axios.get(`/api/courses/${courseIdOrUrl}`);
-          if (idResponse.data) {
-            return idResponse.data as Course;
-          }
-        } catch (idError: any) {
           // Log the error for debugging
-          console.error('Course fetch error:', {
-            urlError: error?.response?.data,
-            idError: idError?.response?.data
-          });
+        console.error('Course fetch error:', error?.response?.data);
           
           // Throw a user-friendly error
           throw new Error(
-            idError?.response?.data?.message || 
             error?.response?.data?.message || 
             'Course not found'
           );
-        }
       }
       throw new Error(`Course not found: ${courseIdOrUrl}`);
     },
     enabled: !!courseIdOrUrl,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1, // Only retry once since we're already trying multiple endpoints
+    retry: 1
   });
 };
 

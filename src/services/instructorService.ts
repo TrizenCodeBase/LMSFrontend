@@ -82,20 +82,15 @@ export const useUpdateInstructorStatus = () => {
       instructorId: string;
       status: 'approved' | 'rejected';
     }) => {
-      const token = localStorage.getItem('token');
       const response = await axios.put(
-        `/api/admin/instructors/${instructorId}/status`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+        `/api/admin/instructor-applications/${instructorId}`,
+        { status }
       );
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['instructors'] });
+      queryClient.invalidateQueries({ queryKey: ['instructorApplications'] });
     },
   });
 };
