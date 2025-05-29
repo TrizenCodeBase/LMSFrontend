@@ -21,13 +21,17 @@ import {
   Users,
   Loader2,
   Archive,
-  CheckCircle
+  CheckCircle,
+  Star,
+  Clock,
+  TrendingUp,
+  Image as ImageIcon
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAllCourses, Course as CourseType } from '@/services/courseService';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,9 +45,26 @@ import {
 import axios from '@/lib/axios';
 import { useNavigate } from 'react-router-dom';
 import AdminCourseView from './AdminCourseView';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Extended course status type to include admin statuses
 type CourseStatus = 'enrolled' | 'started' | 'completed' | 'pending' | 'active' | 'draft' | 'archived';
+
+// Helper: Category emoji/icon map
+const categoryIcons: Record<string, string> = {
+  'Web Development': '🖥️',
+  'Data Science': '📊',
+  'UI/UX': '🎨',
+  'Cloud': '☁️',
+  'Mobile': '📱',
+  'Cybersecurity': '🔒',
+  'AI': '🤖',
+  'Business': '💼',
+  'Marketing': '📈',
+  'Other': '📚',
+};
 
 const CourseManagement = () => {
   const { toast } = useToast();
@@ -191,16 +212,28 @@ const CourseManagement = () => {
     setViewCourseId(null);
   };
 
+  // Mocked instructor stats for popover (replace with real API if available)
+  const getInstructorStats = (instructor: string) => ({
+    email: `${instructor.replace(/ /g, '.').toLowerCase()}@example.com`,
+    courses: Math.floor(Math.random() * 8) + 1,
+    students: Math.floor(Math.random() * 500) + 50,
+  });
+
+  // Mocked enrollments trend (replace with real API if available)
+  const getEnrollmentsTrend = (courseId: string) => ({
+    trend: Math.floor(Math.random() * 20) - 5, // -5 to +15
+  });
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-3xl font-bold tracking-tight">Course Management</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-primary drop-shadow-sm">Course Management</h2>
         </div>
 
-        <Card>
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100">
           <CardHeader>
-            <CardTitle>Courses</CardTitle>
+            <CardTitle className="text-xl font-semibold text-primary">Courses</CardTitle>
           </CardHeader>
           <CardContent>
             {/* Filters */}
@@ -209,14 +242,13 @@ const CourseManagement = () => {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search courses..."
-                  className="pl-8"
+                  className="pl-8 rounded-lg border-primary focus:ring-2 focus:ring-primary/50 shadow-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] border-primary focus:ring-2 focus:ring-primary/50 rounded-lg shadow-sm">
                   <SelectValue placeholder="Filter by category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -226,9 +258,8 @@ const CourseManagement = () => {
                   ))}
                 </SelectContent>
               </Select>
-              
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] border-primary focus:ring-2 focus:ring-primary/50 rounded-lg shadow-sm">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -241,18 +272,18 @@ const CourseManagement = () => {
             </div>
 
             {/* Courses Table */}
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
+            <div className="rounded-xl border overflow-x-auto bg-white/80 shadow-md">
+              <Table className="min-w-[900px]">
+                <TableHeader className="sticky top-0 z-10 bg-white/90 border-b shadow-sm">
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Instructor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Students</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary">Title</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary">Category</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary">Instructor</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary">Rating</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary">Duration</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary">Enrollments</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary">Created</TableHead>
+                    <TableHead className="py-2 text-base font-semibold text-primary text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -278,69 +309,108 @@ const CourseManagement = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredCourses.map((course) => (
-                      <TableRow key={course._id || course.id}>
-                        <TableCell className="py-3">
-                          <div className="max-w-[300px]">
-                            <div className="font-medium truncate">{course.title}</div>
-                            {course.courseUrl && (
-                              <div className="text-xs text-muted-foreground mt-1 truncate">
-                                {course.courseUrl}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{course.category}</TableCell>
-                        <TableCell>{course.instructor || 'Unknown'}</TableCell>
-                        <TableCell>{getStatusBadge(course.status as string)}</TableCell>
-                        <TableCell>{course.students || 0}</TableCell>
-                        <TableCell>{formatDate(course.createdAt)}</TableCell>
-                        <TableCell>{getLastUpdated(course)}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Actions</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleCourseAction('View', course)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleCourseAction('Edit', course)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleCourseAction('Manage Enrollments', course)}>
-                                <Users className="mr-2 h-4 w-4" />
-                                Manage Enrollments
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {(course.status as string) === 'archived' ? (
-                                <DropdownMenuItem onClick={() => handleCourseAction('Activate', course)}>
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Activate
-                                </DropdownMenuItem>
+                    filteredCourses.map((course) => {
+                      const instructorStats = getInstructorStats(course.instructor || 'Unknown');
+                      return (
+                        <TableRow key={course._id || course.id} className="hover:bg-blue-100/70 transition-colors group rounded-xl text-sm">
+                          <TableCell className="py-2">
+                            <div className="flex items-center gap-2 max-w-[220px]">
+                              {/* Thumbnail or category icon */}
+                              {course.image ? (
+                                <Avatar className="h-8 w-8 border shadow-sm">
+                                  <AvatarImage src={course.image} alt={course.title} />
+                                  <AvatarFallback>{course.title[0]}</AvatarFallback>
+                                </Avatar>
                               ) : (
-                                <DropdownMenuItem onClick={() => handleCourseAction('Archive', course)}>
-                                  <Archive className="mr-2 h-4 w-4" />
-                                  Archive
-                                </DropdownMenuItem>
+                                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-muted border">
+                                  <span className="text-lg">{categoryIcons[course.category] || '📚'}</span>
+                                </div>
                               )}
-                              <DropdownMenuItem 
-                                onClick={() => handleCourseAction('Delete', course)}
-                                className="text-red-600 focus:text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-medium truncate group-hover:text-primary font-semibold transition-colors duration-150 text-sm">{course.title}</span>
+                                {course.courseUrl && (
+                                  <span className="text-xs text-muted-foreground mt-0.5 truncate block" style={{ wordBreak: 'break-all' }}>
+                                    {course.courseUrl}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2">{course.category}</TableCell>
+                          <TableCell className="py-2">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <span className="underline cursor-pointer hover:text-primary transition-colors text-sm">{course.instructor || 'Unknown'}</span>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-56">
+                                <div className="font-semibold mb-1">{course.instructor || 'Unknown'}</div>
+                                <div className="text-xs text-muted-foreground mb-2">Instructor</div>
+                                <div className="text-xs mb-1"><b>Email:</b> {instructorStats.email}</div>
+                                <div className="text-xs mb-1"><b>Courses:</b> {instructorStats.courses}</div>
+                                <div className="text-xs"><b>Total Students:</b> {instructorStats.students}</div>
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-500" />
+                              <span className="font-medium">{course.rating?.toFixed(1) || 'N/A'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span>{course.duration || 'N/A'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2">{course.students || 0}</TableCell>
+                          <TableCell className="py-2">{formatDate(course.createdAt)}</TableCell>
+                          <TableCell className="py-2 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="hover:bg-primary/10">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Actions</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleCourseAction('View', course)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCourseAction('Edit', course)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCourseAction('Manage Enrollments', course)}>
+                                  <Users className="mr-2 h-4 w-4" />
+                                  Manage Enrollments
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {(course.status as string) === 'archived' ? (
+                                  <DropdownMenuItem onClick={() => handleCourseAction('Activate', course)}>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Activate
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem onClick={() => handleCourseAction('Archive', course)}>
+                                    <Archive className="mr-2 h-4 w-4" />
+                                    Archive
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem 
+                                  onClick={() => handleCourseAction('Delete', course)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

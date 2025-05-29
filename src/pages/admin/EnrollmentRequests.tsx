@@ -80,7 +80,7 @@ const EnrollmentRequests = () => {
   });
 
   // Fetch enrollment requests
-  const { data, isLoading } = useQuery({
+  const { data: enrollmentData, isLoading } = useQuery({
     queryKey: ['enrollment-requests'],
     queryFn: async () => {
       const response = await axios.get('/api/admin/enrollment-requests');
@@ -98,44 +98,59 @@ const EnrollmentRequests = () => {
   });
   
   // Ensure requests is always an array
-  const requests = data || [];
+  const requests = enrollmentData || [];
 
   // Update counts whenever requests or deleted requests data changes
   useEffect(() => {
-    if (requests || deletedData) {
-      const newCounts = {
-        approved: 0,
-        rejected: 0,
-        pending: 0,
-        deleted: deletedData?.length || 0
-      };
+    if (!enrollmentData && !deletedData) return;
 
-      if (requests) {
-        requests.forEach(request => {
-          newCounts[request.status] = (newCounts[request.status] || 0) + 1;
-        });
-      }
-      
-      setCounts(newCounts);
+    const newCounts = {
+      approved: 0,
+      rejected: 0,
+      pending: 0,
+      deleted: deletedData?.length || 0
+    };
+
+    if (enrollmentData) {
+      enrollmentData.forEach(request => {
+        if (request.status in newCounts) {
+          newCounts[request.status as keyof typeof newCounts] += 1;
+        }
+      });
     }
-  }, [requests, deletedData]);
+    
+    setCounts(newCounts);
+  }, [enrollmentData, deletedData]);
 
   // Approve enrollment request
   const approveMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      return await axios.put(`/api/admin/enrollment-requests/${requestId}/approve`);
+      try {
+        // Approve the enrollment request (referral count will be updated in the backend)
+        const response = await axios.put(`/api/admin/enrollment-requests/${requestId}/approve`);
+        return response;
+      } catch (error) {
+        console.error('Error in enrollment approval:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
-        title: 'Enrollment approved',
-        description: 'The user now has access to the course.',
+        title: 'Success',
+        description: 'Enrollment approved and referral updated successfully.',
       });
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['enrollment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Error in approval process:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Failed to approve enrollment. Please try again.';
       toast({
         title: 'Error',
-        description: 'Failed to approve enrollment.',
+        description: errorMessage,
         variant: 'destructive',
       });
     },

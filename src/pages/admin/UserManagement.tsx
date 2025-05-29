@@ -40,6 +40,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TableLoader } from '@/components/loaders';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface User {
   _id: string;
@@ -98,7 +100,7 @@ const useDeleteUser = () => {
 const UserManagement = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
+  const [selectedTab, setSelectedTab] = useState<'student' | 'instructor'>('student');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
@@ -109,6 +111,10 @@ const UserManagement = () => {
   const users = data || [];
   const updateUserStatusMutation = useUpdateUserStatus();
   const deleteUserMutation = useDeleteUser();
+
+  // Count users for each tab
+  const studentCount = users.filter(u => u.role.toLowerCase() === 'student').length;
+  const instructorCount = users.filter(u => u.role.toLowerCase() === 'instructor').length;
 
   const handleUserAction = (action: string, user: User) => {
     setSelectedUser(user);
@@ -197,14 +203,14 @@ const UserManagement = () => {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    
-    // Exclude admin users
-    return matchesSearch && matchesRole && matchesStatus && user.role !== 'admin';
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.userId.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = user.role.toLowerCase() === selectedTab;
+    const matchesStatus = statusFilter === 'all' || user.status.toLowerCase() === statusFilter;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const getStatusBadge = (status: string) => {
@@ -231,109 +237,138 @@ const UserManagement = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
-          
+      <div className="space-y-6 p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary drop-shadow-sm">User Management</h2>
+        </div>
+        
+        {/* Responsive Tabs */}
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <Tabs value={selectedTab} onValueChange={v => setSelectedTab(v as 'student' | 'instructor')} className="mb-4">
+            <TabsList className="bg-white/90 rounded-xl shadow border flex gap-2 p-1 w-full sm:w-auto">
+              <TabsTrigger value="student" className="flex-1 sm:flex-initial flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm sm:text-base data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              Students
+              <span className="ml-2 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-bold">{studentCount}</span>
+            </TabsTrigger>
+              <TabsTrigger value="instructor" className="flex-1 sm:flex-initial flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm sm:text-base data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              Instructors
+              <span className="ml-2 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-bold">{instructorCount}</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         </div>
 
-        <Card>
+        <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100">
           <CardHeader>
-            <CardTitle>Users</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-semibold text-primary">{selectedTab === 'student' ? 'Students' : 'Instructors'}</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            {/* Responsive Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search users..."
-                  className="pl-8"
+                  className="pl-8 rounded-lg border-primary focus:ring-2 focus:ring-primary/50 shadow-sm w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="instructor">Instructor</SelectItem>
-                </SelectContent>
-              </Select>
-              
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px] rounded-lg border-primary focus:ring-2 focus:ring-primary/50 shadow-sm">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Users Table */}
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
+            
+            <hr className="my-2 border-blue-100" />
+            
+            {/* Responsive Table */}
+            <div className="-mx-4 sm:mx-0 sm:rounded-xl border overflow-x-auto bg-white/90 shadow-lg">
+              <Table className="min-w-[900px]">
+                <TableHeader className="sticky top-0 z-10 bg-white/95 border-b shadow-sm">
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>User ID</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Last Active</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">S.No</TableHead>
+                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">Name</TableHead>
+                    <TableHead className="hidden sm:table-cell py-2 text-sm sm:text-base font-semibold text-primary">User ID</TableHead>
+                    <TableHead className="hidden md:table-cell py-2 text-sm sm:text-base font-semibold text-primary">Email</TableHead>
+                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">Role</TableHead>
+                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">Status</TableHead>
+                    <TableHead className="hidden lg:table-cell py-2 text-sm sm:text-base font-semibold text-primary">Joined</TableHead>
+                    <TableHead className="hidden lg:table-cell py-2 text-sm sm:text-base font-semibold text-primary">Last Active</TableHead>
+                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableLoader colSpan={8} message="Loading users..." />
+                    <TableLoader colSpan={9} message="Loading users..." />
                   ) : error ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center text-red-500">
+                      <TableCell colSpan={9} className="h-24 text-center text-red-500">
                         <div className="flex justify-center items-center">
-                          <AlertTriangle className="h-6 w-6 mr-2" />
+                          <AlertTriangle className="h-6 w-4 mr-2" />
                           <span>Failed to load users. Please try again.</span>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                         No users found matching the current filters.
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user._id || user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-mono">
+                  ) :
+                    filteredUsers.map((user, index) => (
+                      <TableRow key={user._id || user.id} className="hover:bg-blue-100/60 transition-colors group">
+                        <TableCell className="font-medium text-center text-sm">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3 py-2">
+                            <Avatar className="w-8 h-8 sm:w-9 sm:h-9 border shadow-sm bg-primary/10 group-hover:bg-primary group-hover:text-white transition-colors duration-150">
+                            <AvatarFallback>{user.name ? user.name.charAt(0).toUpperCase() : '?'}</AvatarFallback>
+                          </Avatar>
+                            <span className="truncate max-w-[100px] sm:max-w-[140px] text-sm group-hover:text-primary font-semibold transition-colors duration-150" title={user.name}>
+                              {user.name}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant="outline" className="font-mono text-xs px-2 py-1 bg-muted/60 border-primary/20">
                             {user.userId || 'N/A'}
                           </Badge>
                         </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell className="capitalize">{user.role}</TableCell>
+                        <TableCell className="hidden md:table-cell truncate max-w-[140px] text-sm" title={user.email}>
+                          {user.email}
+                        </TableCell>
+                        <TableCell className="capitalize">
+                          <Badge className={
+                            user.role === 'instructor'
+                              ? 'bg-purple-100 text-purple-700 hover:bg-purple-600 hover:text-white transition-colors duration-150'
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors duration-150'
+                          }>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{getStatusBadge(user.status)}</TableCell>
-                        <TableCell>{formatDate(user.createdAt)}</TableCell>
-                        <TableCell>{formatDate(user.lastActive)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">{formatDate(user.createdAt)}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">{formatDate(user.lastActive)}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
                                 <MoreHorizontal className="h-4 w-4" />
                                 <span className="sr-only">Actions</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="w-[160px]">
                               <DropdownMenuItem onClick={() => handleUserAction('View', user)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Profile
@@ -366,7 +401,7 @@ const UserManagement = () => {
                         </TableCell>
                       </TableRow>
                     ))
-                  )}
+                  }
                 </TableBody>
               </Table>
             </div>

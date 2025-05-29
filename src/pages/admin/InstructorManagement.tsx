@@ -421,27 +421,27 @@ const InstructorManagement = () => {
   return (
     <AdminLayout>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="p-3 space-y-3 flex-shrink-0 border-b bg-background">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+        <div className="p-6 space-y-6 flex-shrink-0 border-b bg-gradient-to-b from-background to-muted/20">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
               <div>
-                <h1 className="text-lg font-semibold">Instructor Management</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-2xl font-semibold tracking-tight">Instructor Management</h1>
+                <p className="text-sm text-muted-foreground mt-1">
                   Manage and monitor all instructors in the platform
                 </p>
               </div>
-              <div className="flex flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 sm:flex-none">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search instructors..."
-                    className="pl-8 h-9 w-full sm:w-[200px] text-sm"
+                    className="pl-9 w-full sm:w-[260px] bg-white/50 backdrop-blur-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-9 w-[130px] text-sm">
+                  <SelectTrigger className="w-full sm:w-[160px] bg-white/50 backdrop-blur-sm">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -454,50 +454,53 @@ const InstructorManagement = () => {
               </div>
             </div>
 
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-              <Card className="bg-primary/5">
-                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
-                  <CardTitle className="text-xs font-medium">Total Instructors</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-                <CardContent className="py-2 px-3">
-                  <div className="text-xl font-bold">{instructors.length}</div>
-                  <p className="text-xs text-muted-foreground">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Total Instructors</CardTitle>
+                  <Users className="h-4 w-4 text-violet-500" />
+                </CardHeader>
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-violet-600">{instructors.length}</div>
+                  <p className="text-sm text-violet-600/80">
                     {instructors.filter(i => i.status === 'approved').length} active
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-yellow-500/5">
-                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
-                  <CardTitle className="text-xs font-medium">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+              
+              <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                  <Clock className="h-4 w-4 text-amber-500" />
                 </CardHeader>
-                <CardContent className="py-2 px-3">
-                  <div className="text-xl font-bold">
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-amber-600">
                     {instructors.filter(i => i.status === 'pending').length}
                   </div>
-                  <p className="text-xs text-muted-foreground">Awaiting review</p>
+                  <p className="text-sm text-amber-600/80">Awaiting review</p>
                 </CardContent>
               </Card>
-              <Card className="bg-green-500/5">
-                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
-                  <CardTitle className="text-xs font-medium">Avg. Experience</CardTitle>
-                  <Award className="h-4 w-4 text-muted-foreground" />
+              
+              <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Avg. Experience</CardTitle>
+                  <Award className="h-4 w-4 text-emerald-500" />
                 </CardHeader>
-                <CardContent className="py-2 px-3">
-                  <div className="text-xl font-bold">
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-emerald-600">
                     {Math.round(instructors.reduce((acc, curr) => acc + curr.instructorProfile.experience, 0) / instructors.length || 0)}y
                   </div>
-                  <p className="text-xs text-muted-foreground">Years teaching</p>
+                  <p className="text-sm text-emerald-600/80">Years teaching</p>
                 </CardContent>
               </Card>
-              <Card className="bg-blue-500/5">
-                <CardHeader className="flex flex-row items-center justify-between py-2 px-3 space-y-0">
-                  <CardTitle className="text-xs font-medium">Top Specialty</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+              
+              <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Top Specialty</CardTitle>
+                  <BookOpen className="h-4 w-4 text-blue-500" />
                 </CardHeader>
-                <CardContent className="py-2 px-3">
-                  <div className="text-xl font-bold truncate">
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-blue-600 truncate">
                     {(() => {
                       const specialties = instructors.map(i => i.instructorProfile.specialty);
                       const counts = specialties.reduce((acc, curr) => {
@@ -508,28 +511,28 @@ const InstructorManagement = () => {
                       return Object.keys(counts).find(key => counts[key] === max) || 'N/A';
                     })()}
                   </div>
-                  <p className="text-xs text-muted-foreground">Most common</p>
+                  <p className="text-sm text-blue-600/80">Most common</p>
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 p-3 bg-muted/5">
-          <div className="h-full rounded-md border bg-background shadow-sm overflow-hidden">
+        <div className="flex-1 min-h-0 p-6 bg-muted/5">
+          <div className="h-full rounded-xl border bg-white shadow-sm overflow-hidden">
             <div className="overflow-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[50px] py-2">S.No</TableHead>
-                    <TableHead className="w-[100px] py-2">ID</TableHead>
-                    <TableHead className="py-2">Name</TableHead>
-                    <TableHead className="hidden md:table-cell py-2">Email</TableHead>
-                    <TableHead className="hidden lg:table-cell py-2">Specialty</TableHead>
-                    <TableHead className="hidden lg:table-cell w-[90px] py-2">Exp.</TableHead>
-                    <TableHead className="w-[90px] py-2">Status</TableHead>
-                    <TableHead className="hidden md:table-cell w-[100px] py-2">Registered</TableHead>
-                    <TableHead className="w-[60px] text-right py-2"></TableHead>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead className="w-[50px]">S.No</TableHead>
+                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                    <TableHead className="hidden lg:table-cell">Specialty</TableHead>
+                    <TableHead className="hidden lg:table-cell w-[90px]">Exp.</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="hidden md:table-cell w-[120px]">Registered</TableHead>
+                    <TableHead className="w-[60px] text-right"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -553,16 +556,16 @@ const InstructorManagement = () => {
                     </TableRow>
                   ) : (
                     filteredInstructors.map((instructor, index) => (
-                      <TableRow key={instructor._id} className="hover:bg-muted/50">
-                        <TableCell className="py-2 font-medium">{index + 1}</TableCell>
-                        <TableCell className="py-2">
-                          <code className="px-1.5 py-0.5 rounded bg-muted/50 text-xs">
+                      <TableRow key={instructor._id} className="hover:bg-muted/30 group">
+                        <TableCell className="py-3 font-medium">{index + 1}</TableCell>
+                        <TableCell className="py-3">
+                          <code className="px-2 py-1 rounded-md bg-muted font-mono text-xs">
                             {getInstructorId(instructor)}
                           </code>
                         </TableCell>
-                        <TableCell className="py-2">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8 border border-muted">
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
                               {instructor.profilePicture ? (
                                 <AvatarImage 
                                   src={instructor.profilePicture} 
@@ -571,7 +574,7 @@ const InstructorManagement = () => {
                                 />
                               ) : (
                                 <AvatarFallback 
-                                  className="bg-primary/10 text-primary text-xs"
+                                  className="bg-gradient-to-br from-violet-500 to-purple-500 text-white font-medium"
                                   title={instructor.name}
                                 >
                                   {getInitials(instructor.name)}
@@ -588,28 +591,31 @@ const InstructorManagement = () => {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-3">
                           <div className="flex items-center gap-2">
                             <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                            <a 
+                              href={`mailto:${instructor.email}`}
+                              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                            >
                               {instructor.email}
-                            </span>
+                            </a>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-normal bg-muted/50">
+                        <TableCell className="py-3">
+                          <Badge variant="outline" className="font-normal bg-muted/30 hover:bg-muted/50">
                             {instructor.instructorProfile.specialty}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-3">
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="tabular-nums">
-                              {instructor.instructorProfile.experience} years
+                            <span className="tabular-nums font-medium">
+                              {instructor.instructorProfile.experience}y
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-3">
                           <Badge 
                             variant={
                               instructor.status === 'approved' 
@@ -620,42 +626,51 @@ const InstructorManagement = () => {
                             }
                             className={
                               instructor.status === 'approved'
-                                ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50 hover:bg-emerald-100'
                                 : instructor.status === 'pending'
-                                ? 'bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20'
-                                : 'bg-red-500/10 text-red-600 hover:bg-red-500/20'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200/50 hover:bg-amber-100'
+                                : 'bg-red-50 text-red-700 border border-red-200/50 hover:bg-red-100'
                             }
                           >
-                            {instructor.status.charAt(0).toUpperCase() + instructor.status.slice(1)}
+                            <div className="flex items-center gap-1.5">
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                instructor.status === 'approved' 
+                                  ? 'bg-emerald-500' 
+                                  : instructor.status === 'pending'
+                                  ? 'bg-amber-500'
+                                  : 'bg-red-500'
+                              }`} />
+                              {instructor.status.charAt(0).toUpperCase() + instructor.status.slice(1)}
+                            </div>
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm tabular-nums">
-                          {new Date(instructor.createdAt).toLocaleDateString()}
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span className="text-xs tabular-nums">
+                              {new Date(instructor.createdAt).toLocaleDateString()}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-3">
                           <div className="flex justify-end gap-2">
                             {instructor.status === 'pending' ? (
                               <>
-                              <Button
-                                size="sm"
-                                onClick={() => handleStatusUpdate(instructor._id, 'approved')}
-                                  className="bg-green-500 hover:bg-green-600 text-white transition-colors"
-                              >
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleStatusUpdate(instructor._id, 'approved')}
+                                  className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white transition-all"
+                                >
                                   <CheckCircle2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleStatusUpdate(instructor._id, 'rejected')}
-                                  className="hover:bg-red-600/90 transition-colors"
-                              >
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleStatusUpdate(instructor._id, 'rejected')}
+                                  className="h-8 hover:bg-red-600/90 transition-all"
+                                >
                                   <X className="h-4 w-4" />
-                              </Button>
+                                </Button>
                               </>
                             ) : (
                               <DropdownMenu>
@@ -663,14 +678,14 @@ const InstructorManagement = () => {
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    className="h-8 w-8 p-0 hover:bg-muted transition-colors"
+                                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all data-[state=open]:opacity-100 data-[state=open]:bg-muted"
                                   >
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent 
                                   align="end" 
-                                  className="w-[160px] animate-in fade-in-0 zoom-in-95"
+                                  className="w-[180px] animate-in fade-in-0 zoom-in-95"
                                 >
                                   <DropdownMenuItem 
                                     onClick={() => handleViewDetails(instructor)}
@@ -705,7 +720,7 @@ const InstructorManagement = () => {
                                   ) : (
                                     <DropdownMenuItem 
                                       onClick={() => handleToggleActive(instructor, 'reactivate')}
-                                      className="text-green-600 cursor-pointer focus:text-green-600 focus:bg-green-50"
+                                      className="text-emerald-600 cursor-pointer focus:text-emerald-600 focus:bg-emerald-50"
                                     >
                                       <CheckCircle2 className="h-4 w-4 mr-2" />
                                       Reactivate
@@ -728,169 +743,199 @@ const InstructorManagement = () => {
       
       {/* Instructor Details Dialog */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="max-w-[1000px] p-0 overflow-hidden bg-white rounded-lg">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="text-2xl">Instructor Profile</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[1000px] p-0 overflow-hidden bg-gradient-to-br from-white to-muted/20 rounded-lg border-0">
+          <DialogHeader className="p-6 pb-4 bg-gradient-to-b from-muted/50 to-transparent">
+            <DialogTitle className="text-2xl font-semibold tracking-tight">Instructor Profile</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Viewing detailed information for {selectedInstructor?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-[300px_1fr]">
             {/* Left Column - Profile Info */}
-            <div className="p-6 bg-card border-r">
+            <div className="p-6 bg-muted/10 border-r">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="relative">
-                  <Avatar className="h-32 w-32 border-4 border-background">
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-500 rounded-full blur-xl opacity-20" />
+                  <Avatar className="h-32 w-32 border-4 border-background relative">
                     {selectedInstructor?.profilePicture ? (
                       <AvatarImage 
                         src={selectedInstructor.profilePicture} 
                         alt={selectedInstructor?.name}
                         className="object-cover"
                       />
-                        ) : (
-                      <AvatarFallback className="text-2xl">
+                    ) : (
+                      <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-500 text-2xl text-white font-medium">
                         {selectedInstructor?.name ? getInitials(selectedInstructor.name) : 'IN'}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      </div>
-                      
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                </div>
+                
                 <div>
                   <h3 className="text-xl font-semibold">{selectedInstructor?.name}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {selectedInstructor ? getInstructorId(selectedInstructor) : ''}
-                        </p>
-                  <Badge variant="secondary" className="mt-2">Instructor</Badge>
-                      </div>
-                    </div>
-                    
+                    <code className="px-2 py-0.5 rounded-md bg-muted font-mono text-xs">
+                      {selectedInstructor ? getInstructorId(selectedInstructor) : ''}
+                    </code>
+                  </p>
+                  <Badge variant="secondary" className="mt-3 bg-violet-50 text-violet-700 hover:bg-violet-100">Instructor</Badge>
+                </div>
+              </div>
+              
               <div className="mt-8 space-y-6">
-                    <div className="space-y-3">
-                  <h4 className="text-sm font-semibold">Contact Information</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedInstructor?.email}</span>
-                      </div>
-                    {selectedInstructor?.phone && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedInstructor.phone}</span>
-                        </div>
-                      )}
-                    {selectedInstructor?.location && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedInstructor.location}</span>
-                        </div>
-                      )}
-                    </div>
-                      </div>
-                      
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold">Social Profiles</h4>
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    Contact Information
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    <a 
+                      href={`mailto:${selectedInstructor?.email}`}
+                      className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Mail className="h-4 w-4" />
+                      {selectedInstructor?.email}
+                    </a>
+                    {selectedInstructor?.phone && (
+                      <a 
+                        href={`tel:${selectedInstructor.phone}`}
+                        className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Phone className="h-4 w-4" />
+                        {selectedInstructor.phone}
+                      </a>
+                    )}
+                    {selectedInstructor?.location && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        {selectedInstructor.location}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    Social Profiles
+                  </h4>
                   <div className="space-y-3">
                     {selectedInstructor?.instructorProfile?.socialLinks?.linkedin && (
-                              <a 
-                                href={selectedInstructor.instructorProfile.socialLinks.linkedin} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
+                      <a 
+                        href={selectedInstructor.instructorProfile.socialLinks.linkedin} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                              >
+                      >
                         <Linkedin className="h-4 w-4" />
-                                LinkedIn Profile
-                              </a>
-                          )}
-                            </div>
-                            </div>
-                        </div>
+                        LinkedIn Profile
+                      </a>
+                    )}
                   </div>
-                  
+                </div>
+
+                <div className="pt-4 mt-4 border-t">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Profile Completion</h4>
+                    <div className="flex items-center gap-2">
+                      <Progress value={getProfileCompletion(selectedInstructor)} className="h-2" />
+                      <span className="text-sm tabular-nums font-medium">
+                        {getProfileCompletion(selectedInstructor)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             {/* Right Column - Details */}
             <div className="p-6">
               <div className="grid grid-cols-3 gap-4 mb-8">
-                <Card className="bg-primary/5">
+                <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-0 shadow-sm">
                   <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                     <CardTitle className="text-sm font-medium">
-                      <BookOpen className="h-4 w-4 inline-block mr-2" />
+                      <BookOpen className="h-4 w-4 inline-block mr-2 text-violet-500" />
                       Courses Created
                     </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                    <div className="text-2xl font-bold">
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-violet-600">
                       {selectedInstructor?.instructorProfile?.courses?.length || 0}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                <Card className="bg-primary/5">
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-0 shadow-sm">
                   <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                     <CardTitle className="text-sm font-medium">
-                      <Star className="h-4 w-4 inline-block mr-2" />
+                      <Star className="h-4 w-4 inline-block mr-2 text-amber-500" />
                       Rating
                     </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                    <div className="text-2xl font-bold">
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-amber-600">
                       {selectedInstructor?.instructorProfile?.rating || 0}
-                      <span className="text-sm text-muted-foreground">/5</span>
-                        </div>
-                    <p className="text-xs text-muted-foreground">
+                      <span className="text-sm text-amber-600/80">/5</span>
+                    </div>
+                    <p className="text-xs text-amber-600/80">
                       {selectedInstructor?.instructorProfile?.totalReviews || 0} Reviews
                     </p>
-                      </CardContent>
-                    </Card>
-                  
-                <Card className="bg-primary/5">
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-0 shadow-sm">
                   <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                     <CardTitle className="text-sm font-medium">
-                      <Clock className="h-4 w-4 inline-block mr-2" />
+                      <Clock className="h-4 w-4 inline-block mr-2 text-emerald-500" />
                       Teaching Hours
                     </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                    <div className="text-2xl font-bold">
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-emerald-600">
                       {selectedInstructor?.instructorProfile?.teachingHours || 0}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
               <div className="space-y-8">
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5" />
+                    <GraduationCap className="h-5 w-5 text-violet-500" />
                     About Me
                   </h4>
-                  <p className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4">
                     {selectedInstructor?.bio || selectedInstructor?.instructorProfile?.bio || 'No bio provided'}
-                  </p>
                   </div>
-                  
-                    <div className="space-y-4">
+                </div>
+                
+                <div className="space-y-4">
                   <h4 className="text-lg font-semibold flex items-center gap-2">
-                    <Award className="h-5 w-5" />
+                    <Award className="h-5 w-5 text-violet-500" />
                     Skills & Expertise
                   </h4>
                   <div className="space-y-6">
-                                <div>
+                    <div>
                       <h5 className="text-sm font-medium mb-2">Specialty</h5>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                      <Badge variant="secondary" className="bg-violet-50 text-violet-700 hover:bg-violet-100">
                         {selectedInstructor?.instructorProfile?.specialty || 'Not specified'}
                       </Badge>
-                                </div>
+                    </div>
                     <div>
                       <h5 className="text-sm font-medium mb-2">Experience Level</h5>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium">
-                          {selectedInstructor?.instructorProfile?.experience || 0} Years
-                        </span>
-                              </div>
-                              </div>
-                            </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {selectedInstructor?.instructorProfile?.experience || 0} Years
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

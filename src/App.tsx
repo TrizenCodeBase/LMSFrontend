@@ -27,6 +27,7 @@ import Careers from "./pages/Careers";
 import InternshipApply from "./pages/InternshipApply";
 import PendingApproval from "./pages/PendingApproval";
 import Assessments from "./pages/student/Assessments";
+import EnrollPage from "./pages/enroll";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -125,6 +126,7 @@ const AppRoutes = () => (
         <Signup />
       </PublicRoute>
     } />
+    <Route path="/enroll" element={<EnrollPage />} />
     <Route path="/pending-approval" element={
       <ProtectedRoute>
         <PendingApproval />

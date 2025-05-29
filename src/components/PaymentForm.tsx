@@ -48,9 +48,7 @@ const formSchema = z.object({
   transactionScreenshot: z
     .instanceof(FileList)
     .refine((files) => files.length === 1, "Please upload a transaction screenshot"),
-  referralBy: z.enum(["Dinesh Karthik", "Adarsh", "Nukaraju Neradabilli"], {
-    required_error: "Please select who referred you",
-  }),
+  referralBy: z.string().optional(),
   joinedGroup: z.boolean().refine((value) => value === true, {
     message: "You must join the WhatsApp group to continue",
   }),
@@ -67,16 +65,25 @@ const PaymentForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Get referral ID from localStorage
+  const storedReferrerId = localStorage.getItem('referrerId');
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: user?.email || "",
       mobile: "",
       transactionId: "",
-      referralBy: undefined,
+      referralBy: storedReferrerId || undefined,
       joinedGroup: false,
     },
   });
+
+  // Clear referral data from localStorage after successful submission
+  const clearReferralData = () => {
+    localStorage.removeItem('referrerId');
+    localStorage.removeItem('courseSlug');
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,26 +97,55 @@ const PaymentForm = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    if (!courseId || !course) return;
+    if (!courseId || !course) {
+      toast({
+        title: "Error",
+        description: "Course information is missing. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
       const formData = new FormData();
+    
+      // Add all required fields
       formData.append("email", data.email);
       formData.append("mobile", data.mobile);
       formData.append("transactionId", data.transactionId);
       formData.append("courseName", course.title);
       formData.append("courseId", courseId);
-      formData.append("referralBy", data.referralBy);
+      formData.append("referralBy", data.referralBy || '');
+      
+      // Ensure we have a file
+      if (!data.transactionScreenshot?.[0]) {
+        throw new Error("Transaction screenshot is required");
+      }
       formData.append("transactionScreenshot", data.transactionScreenshot[0]);
       formData.append("joinedGroup", String(data.joinedGroup));
 
-      await axios.post("/api/enrollment-requests", formData, {
+      // Log the form data for debugging
+      console.log('Submitting enrollment request with:', {
+        email: data.email,
+        mobile: data.mobile,
+        transactionId: data.transactionId,
+        courseName: course.title,
+        courseId: courseId,
+        referralBy: data.referralBy,
+        hasScreenshot: !!data.transactionScreenshot?.[0],
+        joinedGroup: data.joinedGroup
+      });
+
+      const response = await axios.post("/api/enrollment-requests", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
+
+      // Clear referral data after successful submission
+      clearReferralData();
 
       toast({
         title: "Success! 🎉",
@@ -122,7 +158,10 @@ const PaymentForm = () => {
       console.error("Error submitting enrollment request:", error);
       const errorMessage =
         error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
         "There was a problem submitting your enrollment request. Please try again.";
+      
       toast({
         title: "Oops! Something went wrong",
         description: errorMessage,
@@ -252,19 +291,15 @@ const PaymentForm = () => {
                     name="referralBy"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm sm:text-base">Referral By</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-10 sm:h-11">
-                              <SelectValue placeholder="Select who referred you" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Dinesh Karthik">Dinesh Karthik</SelectItem>
-                            <SelectItem value="Adarsh">Adarsh</SelectItem>
-                            <SelectItem value="Nukaraju Neradabilli">Nukaraju Neradabilli</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Referred By (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value || ''}
+                            placeholder="Enter referral ID"
+                            disabled={!!storedReferrerId}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
