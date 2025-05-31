@@ -35,6 +35,7 @@ const EnrollPage = () => {
         // Store referral info in localStorage
         localStorage.setItem('referrerId', ref);
         localStorage.setItem('courseSlug', course);
+        localStorage.setItem('referralSource', 'link');
       }
 
       // Check authentication and redirect accordingly

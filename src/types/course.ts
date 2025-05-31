@@ -33,14 +33,37 @@ export interface Course {
   _id: string;
   title: string;
   description: string;
-  imageUrl: string;
-  url: string;
-  instructor: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  weeks: Week[];
-  createdAt: string;
-  updatedAt: string;
+  shortDescription?: string;
+  longDescription?: string;
+  image: string;
+  instructor: string;
+  instructorAvatar?: string;
+  duration: string;
+  enrollmentCount: number;
+  students: number;
+  rating: number;
+  price: number;
+  originalPrice?: number;
+  level: "Beginner" | "Intermediate" | "Advanced";
+  language?: string;
+  courseUrl?: string;
+  progress?: number;
+  status?: 'enrolled' | 'started' | 'completed' | 'pending';
+  enrollmentStatus?: 'pending' | 'approved' | 'rejected';
+  completedDays?: number[];
+  isComingSoon?: boolean;
+  expectedDate?: string;
+  skills?: string[];
+  roadmap?: {
+    day: number;
+    topics: string;
+    video?: string;
+    mcqs?: {
+      question: string;
+      options: {
+        text: string;
+        isCorrect: boolean;
+      }[];
+    }[];
+  }[];
 } 

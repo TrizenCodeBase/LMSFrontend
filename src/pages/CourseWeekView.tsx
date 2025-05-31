@@ -684,7 +684,7 @@ const CourseWeekView = () => {
 
   // Update handleQuizComplete to use the new completion logic
   const handleQuizComplete = async (score: number, selectedAnswers: number[]) => {
-    if (!course?.courseUrl || !token) return;
+    if (!course?.courseUrl || !token || !selectedDay) return;
 
     const currentDay = selectedDay;
     const dayData = course?.roadmap.find(day => day.day === currentDay);
@@ -692,6 +692,23 @@ const CourseWeekView = () => {
     try {
       // Get the current attempts for this day
       const currentAttempts = quizResults[currentDay] || [];
+      
+      // Check if max attempts reached
+      if (currentAttempts.length >= 2) {
+        toast({
+          description: (
+            <CustomToast 
+              title="Maximum Attempts Reached"
+              description="You have reached the maximum number of attempts for this quiz."
+              type="warning"
+            />
+          ),
+          duration: 3000,
+          className: "p-0 bg-transparent border-0"
+        });
+        return;
+      }
+
       const attemptNumber = currentAttempts.length > 0 
         ? Math.max(...currentAttempts.map(a => a.attemptNumber)) + 1 
         : 1;
@@ -699,13 +716,15 @@ const CourseWeekView = () => {
       // Submit to database
       const response = await axios.post('/api/quiz-submissions', {
         courseUrl: course.courseUrl,
+        courseId: course._id,
         dayNumber: currentDay,
         title: `Day ${currentDay} Quiz`,
         questions: dayData?.mcqs,
-        selectedAnswers: selectedAnswers,
+        selectedAnswers,
         score,
         submittedDate: new Date().toISOString(),
-        attemptNumber
+        attemptNumber,
+        isCompleted: score >= 70
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -719,7 +738,8 @@ const CourseWeekView = () => {
           score,
           completedAt: new Date(),
           totalQuestions: dayData?.mcqs?.length || 0,
-          attemptNumber
+          attemptNumber,
+          isCompleted: score >= 70
         };
 
         setQuizResults(prev => ({
@@ -734,30 +754,46 @@ const CourseWeekView = () => {
         setShowQuiz(false);
 
         // Check if we should mark the day as complete
-        if (checkDayCompletion(currentDay)) {
+        if (score >= 70) {
           await handleDayComplete(currentDay);
+          
+          toast({
+            description: (
+              <CustomToast 
+                title="Quiz Completed!"
+                description={`Congratulations! You scored ${score}%. The day has been marked as complete.`}
+                type="success"
+              />
+            ),
+            duration: 5000,
+            className: "p-0 bg-transparent border-0"
+          });
+        } else {
+          const remainingAttempts = 2 - attemptNumber;
+          toast({
+            description: (
+              <CustomToast 
+                title="Quiz Submitted"
+                description={`You scored ${score}%. ${
+                  remainingAttempts > 0 
+                    ? `You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.` 
+                    : 'This was your last attempt.'
+                }`}
+                type="info"
+              />
+            ),
+            duration: 3000,
+            className: "p-0 bg-transparent border-0"
+          });
         }
-
-        // Show appropriate toast based on score
-        toast({
-          description: (
-            <CustomToast 
-              title={score >= 70 ? "Quiz Completed!" : "Quiz Submitted"}
-              description={`You scored ${score}%. ${score >= 70 ? "Great job!" : "Keep practicing to improve your score."}`}
-              type={score >= 70 ? "success" : "info"}
-            />
-          ),
-          duration: 3000,
-          className: "p-0 bg-transparent border-0"
-        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting quiz:', error);
       toast({
         description: (
           <CustomToast 
             title="Error"
-            description="Failed to save quiz results. Please try again."
+            description={error.response?.data?.message || "Failed to submit quiz. Please try again."}
             type="error"
           />
         ),

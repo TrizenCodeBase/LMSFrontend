@@ -99,4 +99,20 @@ export const useDeleteDiscussion = () => {
   });
 };
 
+// Delete reply from discussion
+export const useDeleteReply = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ discussionId, replyId }: { discussionId: string; replyId: string }) => {
+      const response = await axios.delete(`/api/discussions/${discussionId}/replies/${replyId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['instructor-discussions'] });
+    },
+  });
+};
+
 export type { Discussion };

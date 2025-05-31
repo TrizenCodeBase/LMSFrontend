@@ -1,8 +1,8 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
-import { format } from 'date-fns';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { cn } from "@/lib/utils";
 
 interface QuizAttempt {
@@ -11,6 +11,7 @@ interface QuizAttempt {
   completedAt: Date;
   totalQuestions: number;
   attemptNumber: number;
+  isCompleted: boolean;
 }
 
 interface QuizResultsDisplayProps {
@@ -32,47 +33,42 @@ const QuizResultsDisplay = ({ attempts }: QuizResultsDisplayProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      {attempts.map((attempt) => (
-        <Card 
-          key={attempt.attemptNumber}
-          className={cn("transition-colors", getBgColor(attempt.score))}
-        >
+    <div className="space-y-4">
+      {attempts.map((attempt, index) => (
+        <Card key={index} className={`overflow-hidden transition-all duration-300 ${attempt.isCompleted ? 'border-green-500/20 bg-green-50/10' : ''}`}>
           <CardContent className="p-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Attempt {attempt.attemptNumber}</h4>
-                <Badge className={cn(
-                  "text-white",
-                  attempt.score >= 70 ? "bg-secondary" : 
-                  attempt.score >= 50 ? "bg-primary" : 
-                  "bg-destructive"
-                )}>
-                  {attempt.score}%
-                </Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {attempt.isCompleted ? (
+                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium">Attempt {attempt.attemptNumber}</h4>
+                    <Badge variant={attempt.isCompleted ? "outline" : "secondary"} className={`text-xs ${attempt.isCompleted ? 'text-green-600 border-green-200 bg-green-50' : ''}`}>
+                      {attempt.isCompleted ? "Completed" : "In Progress"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{formatDistanceToNow(new Date(attempt.completedAt), { addSuffix: true })}</span>
+                  </div>
+                </div>
               </div>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center text-muted-foreground">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {format(attempt.completedAt, 'PP')}
+              <div className="text-right">
+                <div className={`text-lg font-semibold ${
+                  attempt.isCompleted ? 'text-green-600' : 'text-amber-600'
+                }`}>
+                  {attempt.score}%
                 </div>
-                
-                <div className="flex items-center justify-between text-xs">
-                  <span>Questions:</span>
-                  <span>{attempt.totalQuestions}</span>
-                </div>
-                
-                <div className="w-full bg-background/50 h-1.5 rounded-full">
-                  <div 
-                    className={cn(
-                      "h-1.5 rounded-full",
-                      attempt.score >= 70 ? "bg-secondary" : 
-                      attempt.score >= 50 ? "bg-primary" : 
-                      "bg-destructive"
-                    )} 
-                    style={{ width: `${attempt.score}%` }}
-                  />
+                <div className="text-sm text-muted-foreground">
+                  Score
                 </div>
               </div>
             </div>

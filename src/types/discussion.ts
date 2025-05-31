@@ -22,4 +22,12 @@ export interface Discussion {
     };
   }>;
   likes: string[];
+}
+
+export interface User {
+  id: string;
+  _id?: string; // Some responses use _id
+  name: string;
+  email: string;
+  role?: string;
 } 

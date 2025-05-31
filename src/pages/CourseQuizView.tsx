@@ -13,25 +13,57 @@ import { CustomToast } from "@/components/ui/custom-toast";
 import QuizResultsDisplay from '@/components/QuizResultsDisplay';
 import { useCourseDetails } from '@/services/courseService';
 
+interface MCQQuestion {
+  question: string;
+  options: {
+    text: string;
+    isCorrect: boolean;
+  }[];
+}
+
+interface RoadmapDay {
+  day: number;
+  topics: string;
+  video: string;
+  mcqs: MCQQuestion[];
+}
+
+interface CourseData {
+  _id: string;
+  title: string;
+  courseUrl: string;
+  roadmap: RoadmapDay[];
+}
+
 interface QuizAttempt {
   dayNumber: number;
   score: number;
   completedAt: Date;
   totalQuestions: number;
   attemptNumber: number;
-}
-
-interface QuizSubmission {
-  dayNumber: number;
-  score: number;
-  submittedDate: string;
-  questions: any[];
-  attemptNumber: number;
+  isCompleted: boolean;
 }
 
 interface QuizSubmissionResponse {
-  data: QuizSubmission[];
+  data: {
+    dayNumber: number;
+    score: number;
+    submittedDate: string;
+    questions: MCQQuestion[];
+    attemptNumber: number;
+    isCompleted: boolean;
+  }[];
 }
+
+interface ProgressResponse {
+  enrollment: {
+    completedDays: number[];
+    progress: number;
+    status: string;
+  }
+}
+
+const MAX_ATTEMPTS = 2;
 
 const CourseQuizView = () => {
   const { courseId, dayNumber } = useParams<{ courseId: string; dayNumber: string }>();
@@ -41,9 +73,32 @@ const CourseQuizView = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizResults, setQuizResults] = useState<QuizAttempt[]>([]);
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(true);
+  const [quizNumber, setQuizNumber] = useState(1);
 
-  const { data: course, isLoading: isLoadingCourse } = useCourseDetails(courseId);
-  const currentDay = course?.roadmap.find(day => day.day === parseInt(dayNumber || '1'));
+  const { data: course, isLoading: isLoadingCourse } = useCourseDetails(courseId) as { data: CourseData | undefined; isLoading: boolean };
+  const currentDay = course?.roadmap?.find(day => day.day === parseInt(dayNumber || '1'));
+
+  // Calculate quiz number based on total quizzes
+  useEffect(() => {
+    if (course?.roadmap) {
+      const quizIndex = course.roadmap.findIndex(day => day.mcqs && day.mcqs.length > 0);
+      if (quizIndex !== -1) {
+        const quizCount = course.roadmap
+          .slice(0, parseInt(dayNumber || '1'))
+          .filter(day => day.mcqs && day.mcqs.length > 0)
+          .length;
+        setQuizNumber(quizCount);
+      }
+    }
+  }, [course?.roadmap, dayNumber]);
+
+  // Scroll to current day in sidebar
+  useEffect(() => {
+    const dayElement = document.getElementById(`day-${dayNumber}`);
+    if (dayElement) {
+      dayElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [dayNumber]);
 
   // Fetch quiz submissions
   useEffect(() => {
@@ -64,7 +119,8 @@ const CourseQuizView = () => {
             score: sub.score,
             completedAt: new Date(sub.submittedDate),
             totalQuestions: sub.questions.length,
-            attemptNumber: sub.attemptNumber
+            attemptNumber: sub.attemptNumber,
+            isCompleted: sub.isCompleted
           }))
           .sort((a: QuizAttempt, b: QuizAttempt) => b.attemptNumber - a.attemptNumber);
 
@@ -72,9 +128,15 @@ const CourseQuizView = () => {
       } catch (error) {
         console.error('Error fetching quiz submissions:', error);
         toast({
-          title: "Error",
-          description: "Failed to load quiz results",
-          variant: "destructive"
+          description: (
+            <CustomToast 
+              title="Error"
+              description="Failed to load quiz results"
+              type="error"
+            />
+          ),
+          duration: 3000,
+          className: "p-0 bg-transparent border-0"
         });
       } finally {
         setIsLoadingSubmissions(false);
@@ -85,17 +147,32 @@ const CourseQuizView = () => {
   }, [course?.courseUrl, token, dayNumber, toast]);
 
   const handleQuizComplete = async (score: number, selectedAnswers: number[]) => {
-    if (!course?.courseUrl || !token || !dayNumber) return;
+    if (!course?.courseUrl || !token || !dayNumber || !course?._id) return;
+
+    // Check if max attempts reached
+    if (quizResults.length >= MAX_ATTEMPTS) {
+      toast({
+        description: (
+          <CustomToast 
+            title="Maximum Attempts Reached"
+            description="You have reached the maximum number of attempts for this quiz."
+            type="warning"
+          />
+        ),
+        duration: 3000,
+        className: "p-0 bg-transparent border-0"
+      });
+      return;
+    }
 
     try {
-      const attemptNumber = quizResults.length > 0 
-        ? Math.max(...quizResults.map(a => a.attemptNumber)) + 1 
-        : 1;
+      const attemptNumber = quizResults.length + 1;
 
+      // Submit quiz results
       const response = await axios.post('/api/quiz-submissions', {
         courseUrl: course.courseUrl,
         dayNumber: parseInt(dayNumber),
-        title: `Day ${dayNumber} Quiz`,
+        title: `Quiz ${quizNumber}`,
         questions: currentDay?.mcqs,
         selectedAnswers,
         score,
@@ -111,23 +188,57 @@ const CourseQuizView = () => {
           score,
           completedAt: new Date(),
           totalQuestions: currentDay?.mcqs?.length || 0,
-          attemptNumber
+          attemptNumber,
+          isCompleted: score >= 70
         };
 
         setQuizResults(prev => [newAttempt, ...prev]);
-        setShowQuiz(false);
         
-        toast({
-          title: "Quiz completed",
-          description: `You scored ${score}% on attempt ${attemptNumber}`,
-        });
+        if (score >= 70) {
+          toast({
+            description: (
+              <CustomToast 
+                title="Quiz Completed!"
+                description={`Congratulations! You've completed Quiz ${quizNumber} with a score of ${score}%.`}
+                type="success"
+              />
+            ),
+            duration: 5000,
+            className: "p-0 bg-transparent border-0"
+          });
+        } else {
+          const remainingAttempts = MAX_ATTEMPTS - attemptNumber;
+          toast({
+            description: (
+              <CustomToast 
+                title="Quiz Submitted"
+                description={`You scored ${score}%. ${
+                  remainingAttempts > 0 
+                    ? `You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.` 
+                    : 'This was your last attempt.'
+                }`}
+                type="info"
+              />
+            ),
+            duration: 3000,
+            className: "p-0 bg-transparent border-0"
+          });
+        }
+
+        setShowQuiz(false);
       }
     } catch (error: any) {
       console.error('Error submitting quiz:', error);
       toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to submit quiz. Please try again.",
-        variant: "destructive"
+        description: (
+          <CustomToast 
+            title="Error"
+            description={error.response?.data?.message || "Failed to submit quiz. Please try again."}
+            type="error"
+          />
+        ),
+        duration: 3000,
+        className: "p-0 bg-transparent border-0"
       });
     }
   };
@@ -161,7 +272,7 @@ const CourseQuizView = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Course
           </Button>
-          <h1 className="text-2xl font-bold">Day {dayNumber} Quiz</h1>
+          <h1 className="text-2xl font-bold">Quiz {quizNumber}</h1>
           <p className="text-muted-foreground mt-1">{currentDay.topics}</p>
         </div>
 
@@ -219,13 +330,15 @@ const CourseQuizView = () => {
 
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
-                          <Button 
-                            onClick={() => setShowQuiz(true)}
-                            size="lg"
-                            className="w-full max-w-sm mx-auto"
-                          >
-                            {quizResults.length > 0 ? 'Try Again' : 'Start Quiz'}
-                          </Button>
+                          {(quizResults.length < MAX_ATTEMPTS && !quizResults.some(r => r.isCompleted)) && (
+                            <Button 
+                              onClick={() => setShowQuiz(true)}
+                              size="lg"
+                              className="w-full max-w-sm mx-auto"
+                            >
+                              {quizResults.length > 0 ? 'Try Again' : 'Start Quiz'}
+                            </Button>
+                          )}
                         </div>
 
                         {quizResults.length > 0 && (
@@ -243,7 +356,7 @@ const CourseQuizView = () => {
                     onComplete={handleQuizComplete}
                     onCancel={() => setShowQuiz(false)}
                     dayNumber={parseInt(dayNumber)}
-                    courseUrl={course.courseUrl}
+                    courseUrl={course.courseUrl || ''}
                   />
                 )}
               </div>
@@ -255,4 +368,4 @@ const CourseQuizView = () => {
   );
 };
 
-export default CourseQuizView; 
+export default CourseQuizView;

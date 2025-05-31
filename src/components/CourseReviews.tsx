@@ -52,30 +52,6 @@ const CourseReviews = ({ courseId, courseTitle, reviews, onReviewsChange }: Cour
     }
   }, [user, reviews]);
 
-  useEffect(() => {
-    // Fetch user's review when component mounts
-    const fetchUserReview = async () => {
-      if (!user || !token) return;
-
-      try {
-        const response = await axios.get<Review>(`/api/courses/${courseId}/reviews/my-review`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        if (response.data) {
-          setUserReview(response.data);
-        }
-      } catch (error) {
-        // If no review exists, keep userReview as null
-        console.log('No existing review found');
-      }
-    };
-
-    fetchUserReview();
-  }, [courseId, user, token]);
-
   const otherReviews = reviews.filter(review => review.studentId !== user?.id);
 
   const handleEditClick = (review: Review) => {
@@ -123,18 +99,6 @@ const CourseReviews = ({ courseId, courseTitle, reviews, onReviewsChange }: Cour
 
   const handleReviewSubmitted = () => {
     onReviewsChange();
-    // Fetch the updated user review
-    if (user && token) {
-      axios.get<Review>(`/api/courses/${courseId}/reviews/my-review`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }).then(response => {
-        setUserReview(response.data);
-      }).catch(error => {
-        console.error('Error fetching updated review:', error);
-      });
-    }
   };
 
   const renderStars = (rating: number) => {

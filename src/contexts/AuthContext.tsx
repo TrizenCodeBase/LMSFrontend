@@ -1,14 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from '../lib/axios';
+import axios from '@/lib/axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role?: string;
-}
+import { User } from '@/types/discussion';
 
 interface AuthResponse {
   token: string;
@@ -24,23 +18,21 @@ interface SignupData {
 }
 
 interface AuthContextType {
-  isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (data: SignupData) => Promise<void>;
+  isAuthenticated: boolean;
+  login: (token: string) => void;
   logout: () => void;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
   user: null,
   token: null,
-  loading: true,
-  login: async () => {},
-  signup: async () => {},
+  isAuthenticated: false,
+  login: () => {},
   logout: () => {},
+  updateUser: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -163,15 +155,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/login');
   };
 
+  const updateUser = (user: User) => {
+    setUser(user);
+  };
+
   return (
     <AuthContext.Provider value={{ 
-      isAuthenticated: !!token, 
       user, 
       token, 
-      loading, 
+      isAuthenticated: !!token, 
       login, 
-      signup, 
-      logout 
+      logout, 
+      updateUser 
     }}>
       {children}
     </AuthContext.Provider>

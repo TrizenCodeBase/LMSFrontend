@@ -104,22 +104,22 @@ const EnrollmentRequests = () => {
   useEffect(() => {
     if (!enrollmentData && !deletedData) return;
 
-    const newCounts = {
-      approved: 0,
-      rejected: 0,
-      pending: 0,
-      deleted: deletedData?.length || 0
-    };
+      const newCounts = {
+        approved: 0,
+        rejected: 0,
+        pending: 0,
+        deleted: deletedData?.length || 0
+      };
 
     if (enrollmentData) {
       enrollmentData.forEach(request => {
         if (request.status in newCounts) {
           newCounts[request.status as keyof typeof newCounts] += 1;
         }
-      });
-    }
-    
-    setCounts(newCounts);
+        });
+      }
+      
+      setCounts(newCounts);
   }, [enrollmentData, deletedData]);
 
   // Approve enrollment request

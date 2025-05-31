@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,8 +65,22 @@ const PaymentForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Get referral ID from localStorage
-  const storedReferrerId = localStorage.getItem('referrerId');
+  // Get referral ID from localStorage only if it came from a referral link
+  const storedReferrerId = localStorage.getItem('referralSource') === 'link' 
+    ? localStorage.getItem('referrerId') 
+    : null;
+
+  // Clear referral data when component unmounts or user leaves the page
+  useEffect(() => {
+    return () => {
+      // Only clear if it wasn't a successful submission (handled separately in onSubmit)
+      if (!isSubmitting) {
+        localStorage.removeItem('referrerId');
+        localStorage.removeItem('courseSlug');
+        localStorage.removeItem('referralSource');
+      }
+    };
+  }, [isSubmitting]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,16 +88,10 @@ const PaymentForm = () => {
       email: user?.email || "",
       mobile: "",
       transactionId: "",
-      referralBy: storedReferrerId || undefined,
+      referralBy: storedReferrerId || "",  // Set empty string as default if no referral
       joinedGroup: false,
     },
   });
-
-  // Clear referral data from localStorage after successful submission
-  const clearReferralData = () => {
-    localStorage.removeItem('referrerId');
-    localStorage.removeItem('courseSlug');
-  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -143,9 +151,6 @@ const PaymentForm = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      // Clear referral data after successful submission
-      clearReferralData();
 
       toast({
         title: "Success! 🎉",
@@ -292,14 +297,14 @@ const PaymentForm = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Referred By (Optional)</FormLabel>
-                        <FormControl>
+                          <FormControl>
                           <Input
                             {...field}
                             value={field.value || ''}
                             placeholder="Enter referral ID"
                             disabled={!!storedReferrerId}
                           />
-                        </FormControl>
+                          </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

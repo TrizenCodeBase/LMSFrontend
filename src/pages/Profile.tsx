@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAllCourses } from "@/services/courseService";
+import { useAllCourses, useEnrolledCourses } from "@/services/courseService";
 import { useUserProfile } from '@/services/userService';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from '@/lib/axios';
@@ -139,11 +139,9 @@ const AvatarSelector = ({
 
 const ReferralLinkSection = ({ 
   username,
-  studentId,
   userId
 }: { 
   username: string,
-  studentId: string,
   userId: string 
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<string>("");
@@ -315,7 +313,7 @@ const Profile = () => {
   // Get user data from auth context and profile data
   const { token, isAuthenticated, user } = useAuth();
   const { data: userProfile } = useUserProfile() as { data: LocalUserSettings | undefined };
-  const { data: enrolledCourses = [] } = useAllCourses();
+  const { data: enrolledCourses = [] } = useEnrolledCourses(token);
   const queryClient = useQueryClient();
 
   // Use profile data or fallback
@@ -363,7 +361,17 @@ const Profile = () => {
 
   // Calculate actual stats from enrolled courses and include referral count
   const completedCourses = enrolledCourses.filter(course => course.status === 'completed' && course.progress === 100);
-  const coursesInProgress = enrolledCourses.filter(course => course.status === 'started' || (course.status === 'enrolled' && course.progress > 0));
+  const coursesInProgress = enrolledCourses.filter(course => 
+    course.status === 'started' && course.progress > 0 && course.progress < 100
+  );
+
+  // Filter only actually enrolled courses
+  const actualEnrolledCourses = enrolledCourses.filter(course => 
+    course.status && 
+    ['enrolled', 'started', 'completed'].includes(course.status) &&
+    course.title &&
+    course.title.length > 0
+  );
   
   const userData = {
     name: userProfile?.displayName || displayName,
@@ -383,178 +391,128 @@ const Profile = () => {
       { id: 2, title: "Quick Learner", description: "Maintain 90% average", progress: 0, icon: Star },
       { id: 3, title: "Active Learner", description: "Study consistently for 30 days", progress: 0, icon: Clock }
     ],
-    recentActivity: enrolledCourses.slice(0, 3).map((course, index) => ({
-      id: index + 1,
-      type: course.status === 'completed' ? 'course' : 'progress',
-      title: course.status === 'completed' 
-        ? `Completed ${course.title}` 
-        : `Progress in ${course.title}: ${course.progress}%`,
-      date: "Recently",
-      progress: course.progress,
-      icon: course.status === 'completed' ? BookOpen : Clock
-    }))
+    recentActivity: actualEnrolledCourses
+      .slice(0, 3)
+      .map((course, index) => {
+        const progress = typeof course.progress === 'number' ? course.progress : 0;
+        return {
+          id: index + 1,
+          type: course.status === 'completed' ? 'course' : 'progress',
+          title: course.status === 'completed' 
+            ? `Completed ${course.title}` 
+            : `Progress in ${course.title}: ${progress}%`,
+          date: "Recently",
+          progress: progress,
+          icon: course.status === 'completed' ? BookOpen : Clock
+        };
+      })
   };
 
   return (
     <DashboardLayout>
-      <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
-        <div className="max-w-[1200px] mx-auto space-y-6">
-          {/* Profile Header */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row gap-6">
-                {/* Left Column - Avatar and Basic Info */}
-                <div className="flex flex-col items-center sm:items-start space-y-4">
-                  <div className="relative group">
-                    <Avatar className="h-24 w-24 sm:h-32 sm:w-32 ring-2 ring-primary/10">
-                      <AvatarImage src={userData.avatar} />
-                      <AvatarFallback>{userData.name[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="absolute -bottom-2 -right-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Camera className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Choose Your Avatar</DialogTitle>
-                          <DialogDescription>
-                            Select from different avatar styles to personalize your profile
-                          </DialogDescription>
-                        </DialogHeader>
-                        <AvatarSelector
-                          username={displayName}
-                          currentAvatar={userData.avatar}
-                          onSelect={handleAvatarChange}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <h1 className="text-2xl font-bold">{userData.name}</h1>
-                    <div className="mt-1 flex items-center gap-2 text-muted-foreground">
-                      <User className="h-4 w-4" />
-                      <code className="px-2 py-0.5 rounded bg-primary/10 text-sm font-mono">
-                        {userProfile?.userId || '****'}
-                      </code>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2 text-muted-foreground">
+      <div className="flex-1 space-y-6 p-4 sm:p-6 overflow-y-auto bg-gray-50/50">
+        {/* Profile Header */}
+        <div className="relative">
+          {/* Cover Image */}
+          <div className="h-32 sm:h-40 w-full bg-gradient-to-r from-[#2D1F8F] to-[#4338CA] rounded-xl" />
+          
+          {/* Profile Info */}
+          <div className="relative px-4 sm:px-6 -mt-16">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                {/* Avatar Section */}
+                <div className="relative group">
+                  <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
+                    <AvatarImage src={userData.avatar} />
+                    <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button className="absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full shadow-md hover:bg-primary/90 transition-colors">
+                        <Camera className="h-4 w-4" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Choose Your Avatar</DialogTitle>
+                        <DialogDescription>
+                          Select from various styles to create your unique avatar
+                        </DialogDescription>
+                      </DialogHeader>
+                      <AvatarSelector
+                        username={userData.name}
+                        currentAvatar={userData.avatar}
+                        onSelect={handleAvatarChange}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* User Info */}
+                <div className="flex-1 text-center sm:text-left space-y-2">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{userData.name}</h1>
+                    <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
                       <Mail className="h-4 w-4" />
-                      <span>{userData.email}</span>
-                    </div>
+                      {userData.email}
+                    </p>
+                    <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mt-1">
+                      <User className="h-4 w-4" />
+                      <code className="px-2 py-0.5 bg-primary/5 rounded text-sm font-mono">
+                        {userProfile?.userId ? `TST${userProfile.userId.slice(-4)}` : 'TST****'}
+                      </code>
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-sm">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                      {userData.role}
+                    </Badge>
+                    <Badge variant="outline" className="gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Joined {userData.joinDate}
+                    </Badge>
                   </div>
                 </div>
 
-                {/* Right Column - Additional Info */}
-                <div className="flex-1 space-y-4">
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                    <div className="space-y-4 w-full">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <h3 className="font-medium">About Me</h3>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{userData.bio}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="default" className="bg-primary/10 text-primary hover:bg-primary/20">
-                          {userData.role}
-                        </Badge>
-                        <Badge variant="outline" className="border-primary/20">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Member since {userData.joinDate}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Link to="/settings">
-                      <Button variant="outline" className="w-full sm:w-auto">
-                        Edit Profile
-                      </Button>
-                    </Link>
+                {/* Quick Stats */}
+                <div className="flex gap-4 items-center">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{userData.stats.coursesCompleted}</p>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                  </div>
+                  <Separator orientation="vertical" className="h-12" />
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{userData.stats.coursesInProgress}</p>
+                    <p className="text-sm text-muted-foreground">In Progress</p>
+                  </div>
+                  <Separator orientation="vertical" className="h-12" />
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{userData.stats.referralCount}</p>
+                    <p className="text-sm text-muted-foreground">Referrals</p>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Courses Completed Card */}
-            <Card className="relative overflow-hidden">
-              <CardContent className="p-6">
-                <div className="relative z-10">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Courses Completed
-                  </p>
-                  <h3 className="text-2xl font-bold mt-2">{userData.stats.coursesCompleted}</h3>
-                </div>
-                <div className="absolute right-2 top-2 text-muted-foreground/20">
-                  <BookOpen className="h-12 w-12" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Courses In Progress Card */}
-            <Card className="relative overflow-hidden">
-              <CardContent className="p-6">
-                <div className="relative z-10">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Courses In Progress
-                  </p>
-                  <h3 className="text-2xl font-bold mt-2">{userData.stats.coursesInProgress}</h3>
-                </div>
-                <div className="absolute right-2 top-2 text-muted-foreground/20">
-                  <Clock className="h-12 w-12" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Referral Count Card */}
-            <Card className="relative overflow-hidden">
-              <CardContent className="p-6">
-                <div className="relative z-10">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Successful Referrals
-                  </p>
-                  <h3 className="text-2xl font-bold mt-2">{userData.stats.referralCount}</h3>
-                </div>
-                <div className="absolute right-2 top-2 text-muted-foreground/20">
-                  <Users2 className="h-12 w-12" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Average Grade Card */}
-            <Card className="relative overflow-hidden">
-              <CardContent className="p-6">
-                <div className="relative z-10">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Average Grade
-                  </p>
-                  <h3 className="text-2xl font-bold mt-2">{userData.stats.averageGrade}%</h3>
-                </div>
-                <div className="absolute right-2 top-2 text-muted-foreground/20">
-                  <Star className="h-12 w-12" />
-                </div>
-              </CardContent>
-            </Card>
+            </div>
           </div>
+        </div>
 
-          {/* Referral Section */}
-          <ReferralLinkSection 
-            username={displayName}
-            studentId={userProfile?.userId || ''}
-            userId={userProfile?.userId || ''}
-          />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* About Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  About
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">{userData.bio}</p>
+              </CardContent>
+            </Card>
 
-          {/* Achievements and Activity Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Achievements */}
             <Card>
               <CardHeader>
@@ -562,58 +520,61 @@ const Profile = () => {
                   <Trophy className="h-5 w-5 text-primary" />
                   Achievements
                 </CardTitle>
-                <CardDescription>Track your learning milestones</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {userData.achievements.map((achievement) => (
+                  <div key={achievement.id} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <achievement.icon className="h-5 w-5 text-primary" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium">{achievement.title}</h4>
+                        <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                      </div>
+                    </div>
+                    <Progress value={achievement.progress} className="h-1.5" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Recent Activity
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {userData.achievements.map((achievement) => (
-                    <div key={achievement.id} className="p-4 bg-muted/50 rounded-lg space-y-2">
-                      <div className="flex items-start gap-4">
-                        <div className="p-2 rounded-full bg-primary/10">
-                          <achievement.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{achievement.title}</h3>
-                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                        </div>
+                  {userData.recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-4">
+                      <div className="rounded-full p-2 bg-primary/10">
+                        <activity.icon className="h-4 w-4 text-primary" />
                       </div>
-                      <Progress value={achievement.progress} className="h-1.5" />
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium">{activity.title}</p>
+                        <p className="text-xs text-muted-foreground">{activity.date}</p>
+                        {activity.progress !== undefined && (
+                          <Progress value={activity.progress} className="h-1.5" />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
-                  Recent Activity
-                </CardTitle>
-                <CardDescription>Your latest learning progress</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {userData.recentActivity.map((activity) => (
-                    <div key={activity.id} className="p-4 bg-muted/50 rounded-lg space-y-2">
-                      <div className="flex items-start gap-4">
-                        <div className="p-2 rounded-full bg-primary/10">
-                          <activity.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{activity.title}</p>
-                          <p className="text-sm text-muted-foreground">{activity.date}</p>
-                        </div>
-                      </div>
-                      {activity.type === 'progress' && (
-                        <Progress value={activity.progress} className="h-1.5" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Referral Section */}
+            {isAuthenticated && user && (
+              <ReferralLinkSection
+                username={userData.name}
+                userId={user._id}
+              />
+            )}
           </div>
         </div>
       </div>

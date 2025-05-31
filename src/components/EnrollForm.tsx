@@ -8,9 +8,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { useQueryClient } from '@tanstack/react-query';
-import { Star } from 'lucide-react';
+import { Star, Lock, Play, CheckCircle, Users, Clock, Globe, Award, BookOpen, ChevronDown, ChevronUp, GraduationCap, BookOpenCheck, Target, Sparkles } from 'lucide-react';
 import CourseReviews from '@/components/CourseReviews';
 import axios from '@/lib/axios';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+interface MCQOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+interface MCQQuestion {
+  question: string;
+  options: MCQOption[];
+  explanation?: string;
+}
 
 interface RoadmapDay {
   day: number;
@@ -25,40 +37,6 @@ interface RoadmapDay {
   completed?: boolean;
 }
 
-interface Course {
-  _id: string;
-  title: string;
-  description: string;
-  longDescription?: string;
-  instructor: string;
-  instructorDetails?: {
-    name: string;
-    email: string;
-    profilePicture?: string;
-    bio?: string;
-    userId?: string;
-  };
-  thumbnail: string;
-  price: number;
-  originalPrice?: number;
-  students: number;
-  rating: number;
-  enrollmentStatus?: string;
-  duration?: string;
-  days?: number;
-  level?: string;
-  language?: string;
-  learningObjectives?: string[];
-  requirements?: string[];
-  targetAudience?: string[];
-  roadmap?: RoadmapDay[];
-  content?: any[];
-  skills?: string[];
-  progress?: number;
-  image?: string;
-  courseUrl?: string;
-}
-
 interface Review {
   _id: string;
   studentId: string;
@@ -66,6 +44,34 @@ interface Review {
   rating: number;
   comment: string;
   createdAt: string;
+}
+
+interface Instructor {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  title?: string;
+}
+
+interface Course {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  duration: string;
+  level: string;
+  instructor: Instructor | string;
+  roadmap: RoadmapDay[];
+  completedDays?: number[];
+  courseUrl?: string;
+  enrollmentStatus?: string;
+  language?: string;
+  image?: string;
+  progress?: number;
+  students?: number;
+  skills?: string[];
+  originalPrice?: number;
 }
 
 interface EnrollFormProps {
@@ -79,6 +85,7 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   const queryClient = useQueryClient();
   const { data: reviewCounts } = useReviewCounts();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   
   const { data: course, isLoading, isError, refetch } = useCourseDetails(courseId);
   const enrollMutation = useEnrollCourse();
@@ -174,6 +181,183 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
     navigate(`/course/${courseIdentifier}/weeks`);
   };
 
+  const handleDayClick = (day: RoadmapDay, index: number) => {
+    if (!isUserEnrolled) {
+      toast({
+        title: "Enrollment Required",
+        description: "Please enroll in the course to access this content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const previousDaysCompleted = course?.roadmap
+      ?.slice(0, index)
+      .every(d => d.completed);
+
+    if (!previousDaysCompleted) {
+      toast({
+        title: "Previous Days Required",
+        description: "Please complete the previous days first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Navigate to the specific day in the course
+    const courseIdentifier = course?.courseUrl || courseId;
+    navigate(`/course/${courseIdentifier}/weeks?day=${day.day}`);
+  };
+
+  const renderCourseContent = () => {
+    if (!course?.roadmap) return null;
+
+    return (
+      <div className="mt-12">
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Course Content</h2>
+          <p className="text-sm text-gray-500">
+            {course.roadmap.length} lessons • {course?.duration || 'Self-paced'} • All levels
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          {course.roadmap.map((day, index) => {
+            const isLocked = !isUserEnrolled;
+            const isCompleted = course.completedDays?.includes(day.day) || false;
+            const isPreviousCompleted = index === 0 || 
+              (course.completedDays?.includes(index) || false);
+
+            return (
+              <div
+                key={index}
+                onClick={() => {
+                  if (!isLocked && (isPreviousCompleted || isCompleted)) {
+                    const courseIdentifier = course?.courseUrl || courseId;
+                    navigate(`/course/${courseIdentifier}/weeks?day=${day.day}`);
+                  }
+                }}
+                className={`relative group cursor-pointer rounded-xl border transition-all duration-200
+                  ${isLocked 
+                    ? 'border-gray-200 hover:border-gray-300 bg-white' 
+                    : isCompleted
+                      ? 'border-[#2D1F8F] bg-white hover:shadow-sm'
+                      : isPreviousCompleted
+                        ? 'border-[#2D1F8F]/30 hover:border-[#2D1F8F] hover:shadow-sm bg-white'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+              >
+                <div className="flex items-start p-4 gap-4">
+                  {/* Day Number Badge */}
+                  <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold
+                    ${isCompleted 
+                      ? 'bg-[#2D1F8F] text-white ring-2 ring-[#2D1F8F]/10' 
+                      : isPreviousCompleted
+                        ? 'bg-[#2D1F8F]/10 text-[#2D1F8F] ring-2 ring-[#2D1F8F]/5'
+                        : 'bg-gray-100 text-gray-500 ring-2 ring-gray-50'
+                    }`}>
+                    {day.day}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-grow min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className={`text-sm font-semibold leading-tight ${
+                        isLocked || (!isPreviousCompleted && !isCompleted) 
+                          ? 'text-gray-500' 
+                          : 'text-gray-900'
+                      }`}>
+                        {day.topics}
+                      </h3>
+                      {isCompleted && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#2D1F8F]/10 text-[#2D1F8F]">
+                          Completed
+                        </span>
+                      )}
+                    </div>
+                    {day.description && (
+                      <p className={`text-xs leading-relaxed ${
+                        isLocked || (!isPreviousCompleted && !isCompleted) 
+                          ? 'text-gray-400' 
+                          : 'text-gray-600'
+                      }`}>
+                        {day.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Status Icon */}
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+                    transition-colors duration-200
+                    ${isCompleted 
+                      ? 'text-[#2D1F8F] bg-[#2D1F8F]/5' 
+                      : isLocked || !isPreviousCompleted 
+                        ? 'text-gray-400 bg-gray-50'
+                        : 'text-[#2D1F8F] bg-[#2D1F8F]/5 group-hover:bg-[#2D1F8F]/10'
+                    }`}>
+                    {isCompleted ? (
+                      <CheckCircle className="w-5 h-5" />
+                    ) : isLocked || !isPreviousCompleted ? (
+                      <Lock className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Completion Status */}
+                <div className={`px-4 py-2.5 border-t text-xs font-medium flex items-center gap-2
+                  ${isCompleted 
+                    ? 'border-[#2D1F8F]/10 text-[#2D1F8F] bg-[#2D1F8F]/5' 
+                    : isPreviousCompleted
+                      ? 'border-gray-100 text-[#2D1F8F] bg-[#2D1F8F]/5'
+                      : 'border-gray-100 text-gray-500 bg-gray-50/50'
+                  }`}>
+                  {isCompleted ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Completed this lesson</span>
+                    </>
+                  ) : isPreviousCompleted ? (
+                    <>
+                      <Play className="w-4 h-4" />
+                      <span>Continue with this lesson</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>Complete previous lessons to unlock</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Locked Overlay */}
+                {(isLocked || (!isPreviousCompleted && !isCompleted)) && (
+                  <div className="absolute inset-0 bg-white/90 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
+                    <div className="text-center p-6">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3 ring-4 ring-gray-50">
+                        <Lock className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 mb-1">
+                        {!isUserEnrolled 
+                          ? "Lesson Locked" 
+                          : "Complete Previous Lessons"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {!isUserEnrolled 
+                          ? "Enroll in this course to unlock all content" 
+                          : "Complete the previous lessons to unlock this content"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderRatingStars = () => {
     return (
       <div className="flex items-center gap-1">
@@ -259,12 +443,17 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
     return course.roadmap.length === totalDurationDays && course.progress === 100;
   };
 
+  // Add type guard function
+  const isInstructorObject = (instructor: Instructor | string): instructor is Instructor => {
+    return typeof instructor === 'object' && instructor !== null && '_id' in instructor;
+  };
+
   if (!isAuthenticated) {
     actionButton = (
       <Button 
         size="lg" 
         onClick={handleEnroll} 
-        className="mb-4 w-full bg-primary hover:bg-primary/90"
+        className="mb-4 w-full bg-[#2D1F8F] hover:bg-[#2D1F8F]/90"
       >
         Enroll Now
       </Button>
@@ -274,7 +463,7 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
       <Button 
         size="lg" 
         onClick={handleEnroll} 
-        className="mb-4 w-full bg-primary hover:bg-primary/90"
+        className="mb-4 w-full bg-[#2D1F8F] hover:bg-[#2D1F8F]/90"
         disabled={enrollMutation.isPending}
       >
         {enrollMutation.isPending ? "Enrolling..." : "Enroll Now"}
@@ -283,15 +472,15 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   } else if (allCourseDaysCompleted()) {
     actionButton = (
       <div className="space-y-2">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-          <p className="text-green-700 text-sm font-medium">
+        <div className="bg-[#2D1F8F]/5 border border-[#2D1F8F]/20 rounded-lg p-3 text-center">
+          <p className="text-[#2D1F8F] text-sm font-medium">
             🎉 Congratulations! You've completed the course!
           </p>
         </div>
         <Button 
           size="lg" 
           onClick={handleResumeCourse} 
-          className="mb-4 w-full bg-green-600 hover:bg-green-700"
+          className="mb-4 w-full bg-[#2D1F8F] hover:bg-[#2D1F8F]/90"
         >
           View Course
         </Button>
@@ -300,15 +489,15 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   } else if (allUploadedDaysCompleted()) {
     actionButton = (
       <div className="space-y-2">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-          <p className="text-blue-700 text-sm">
+        <div className="bg-[#2D1F8F]/5 border border-[#2D1F8F]/20 rounded-lg p-3 text-center">
+          <p className="text-[#2D1F8F] text-sm">
             You've completed all available content! More content will be added soon.
           </p>
         </div>
         <Button 
           size="lg" 
           onClick={handleResumeCourse} 
-          className="mb-4 w-full bg-blue-600 hover:bg-blue-700"
+          className="mb-4 w-full bg-[#2D1F8F] hover:bg-[#2D1F8F]/90"
         >
           Resume Course
         </Button>
@@ -319,7 +508,7 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
       <Button 
         size="lg" 
         onClick={handleResumeCourse} 
-        className="mb-4 w-full bg-blue-600 hover:bg-blue-700"
+        className="mb-4 w-full bg-[#2D1F8F] hover:bg-[#2D1F8F]/90"
       >
         Resume Course
       </Button>
@@ -328,198 +517,286 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-b from-background to-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          {/* Hero Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            <div className="lg:col-span-2">
-              <div className="space-y-6">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-                  {course?.title}
-                </h1>
-                
-                <div className="flex items-center gap-4">
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50/50">
+        {/* Hero Section */}
+        <div className="bg-[#2D1F8F] text-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <div className="max-w-4xl">
+              {/* Course Level Badge */}
+              <div className="mb-3">
+                <Badge variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
+                  {course?.level || 'All Levels'}
+                </Badge>
+              </div>
+
+              {/* Course Title */}
+              <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
+                {course?.title}
+              </h1>
+
+              {/* Short Description */}
+              <p className="text-base text-white/90 mb-4">
+                {course?.description?.slice(0, 150)}...
+              </p>
+
+              {/* Course Stats */}
+              <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
+                {/* Rating */}
+                <div className="flex items-center gap-2 text-white/90">
                   {renderRatingStars()}
-                  <div className="text-sm text-muted-foreground">•</div>
-                  <div className="text-sm text-muted-foreground">{course?.students?.toLocaleString()} students</div>
                 </div>
 
-                {/* Short Description */}
-                              <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                <p className="text-sm font-semibold text-foreground">
-                  {course?.description}
-                </p>
+                {/* Students */}
+                {course?.students !== undefined && (
+                  <div className="flex items-center gap-2 text-white/90">
+                    <Users className="w-4 h-4 text-white/90" />
+                    <span>{course.students.toLocaleString()} students</span>
+                  </div>
+                )}
+
+                {/* Duration */}
+                {course?.duration && (
+                  <div className="flex items-center gap-2 text-white/90">
+                    <Clock className="w-4 h-4 text-white/90" />
+                    <span>{course.duration}</span>
+                  </div>
+                )}
+
+                {/* Language */}
+                {course?.language && (
+                  <div className="flex items-center gap-2 text-white/90">
+                    <Globe className="w-4 h-4 text-white/90" />
+                    <span>{course.language}</span>
+                  </div>
+                )}
               </div>
 
-                {/* Long Description */}
-                              <div className="bg-card rounded-xl p-6 border space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  About This Course
-                </h2>
-                <div className="prose prose-gray dark:prose-invert max-w-none">
-                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                    {course?.longDescription}
-                  </p>
-                </div>
-              </div>
-
-                {/* Instructor Info */}
-                <div className="flex items-center gap-4 p-4 bg-card rounded-lg border">
-                  <div className="w-16 h-16 rounded-full overflow-hidden">
-                    {course?.instructorDetails?.profilePicture ? (
-                      <img 
-                        src={course.instructorDetails.profilePicture}
-                        alt={course.instructorDetails.name || course.instructor}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-lg">{course?.instructorDetails?.name || course?.instructor}</p>
-                    <p className="text-sm text-muted-foreground">Course Instructor</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Enrollment Card */}
-            <div className="lg:col-span-1">
-              <div className="bg-card rounded-xl shadow-lg p-6 sticky top-24">
-                <div className="space-y-4">
-                <img
-                    src={course?.image}
-                    alt={course?.title}
-                    className="w-full h-100 object-cover rounded-lg mb-4"
-                  />
-                  {/* <div className="flex items-baseline justify-between">
-                    <span className="text-3xl font-bold">{course?.price}</span>
-                    {course?.originalPrice && (
-                      <span className="text-lg text-muted-foreground line-through">
-                        {course?.originalPrice}
-                      </span>
-                    )}
-                  </div> */}
-
-                  {actionButton}
-
-                  <div className="text-sm text-muted-foreground">
-                    <p className="mb-2">This course includes:</p>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        {course?.duration || '10 hours'} of video content
-                      </li>
-                      {course?.language && (
-                        <li className="flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Language: {course.language}
-                        </li>
-                      )}
-                      <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Certificate of completion
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Lifetime access
-                      </li>
-                    </ul>
-                  </div>
+              {/* Instructor Info */}
+              <div className="flex items-center gap-3">
+                <Avatar className="w-10 h-10">
+                  {isInstructorObject(course?.instructor) && course.instructor.avatar ? (
+                    <img 
+                      src={course.instructor.avatar}
+                      alt={course.instructor.name}
+                      className="h-full w-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-white/10 text-white text-base">
+                      {isInstructorObject(course?.instructor) ? 
+                        course.instructor.name.split(' ').map(n => n[0]).join('') :
+                        'IN'
+                      }
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div>
+                  <h3 className="text-base font-medium text-white">
+                    {isInstructorObject(course?.instructor) ? 
+                      course.instructor.name :
+                      course?.instructor || 'Instructor'
+                    }
+                  </h3>
+                  {isInstructorObject(course?.instructor) && course.instructor.title && (
+                    <p className="text-sm text-white/75">{course.instructor.title}</p>
+                  )}
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Course Content Preview */}
-          <div className="-mx-4 sm:-mx-6 lg:-mx-8">
-            <div className="grid grid-cols-1 lg:grid-cols-8 gap-8 px-4 sm:px-6 lg:px-8">
-              <div className="lg:col-span-8 space-y-8">
-                {/* What you'll learn */}
-                <div className="bg-card rounded-xl p-8">
-                  <h2 className="text-xl font-semibold mb-6">What you'll learn</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {(course?.skills || [
-                      "No skills specified for this course"
-                    ]).map((skill, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <svg className="w-6 h-6 mt-0.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-base">{skill}</span>
+        {/* Main Content */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
+            {/* Main Content Column */}
+            <div className="lg:col-span-2">
+              {/* About This Course */}
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
+                  <BookOpenCheck className="w-6 h-6 text-[#2D1F8F]" />
+                  About This Course
+                </h2>
+                <div className="prose prose-gray max-w-none">
+                  <div className={`relative ${!isDescriptionExpanded && 'max-h-[300px] overflow-hidden'}`}>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap mb-4">
+                      {course?.longDescription || course?.description}
+                    </p>
+                    {!isDescriptionExpanded && (
+                      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent" />
+                    )}
+                  </div>
+                  {(course?.longDescription?.length || course?.description?.length || 0) > 300 && (
+                    <button
+                      onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                      className="flex items-center gap-2 text-[#2D1F8F] hover:text-[#2D1F8F]/80 font-medium mt-4"
+                    >
+                      {isDescriptionExpanded ? (
+                        <>
+                          Show Less
+                          <ChevronUp className="w-4 h-4" />
+                        </>
+                      ) : (
+                        <>
+                          Read More
+                          <ChevronDown className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Enrollment Card - Mobile Only */}
+              <div className="lg:hidden mb-8">
+                <div className="bg-white rounded-2xl shadow-lg border p-6">
+                  <div className="space-y-6">
+                    <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-100">
+                      <img
+                        src={course?.image}
+                        alt={course?.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* Price Section */}
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-[#2D1F8F]">
+                        {course?.price}
+                      </span>
+                      {course?.originalPrice && (
+                        <span className="text-lg text-gray-500 line-through">
+                          {course.originalPrice}
+                        </span>
+                      )}
+                    </div>
+
+                    {actionButton}
+
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-[#2D1F8F]" />
+                        This course includes:
+                      </h4>
+                      <ul className="space-y-3">
+                        <li className="flex items-center gap-3 text-gray-600">
+                          <Play className="w-5 h-5 text-[#2D1F8F]" />
+                          {course?.duration || '10 hours'} of video content
+                        </li>
+                        {course?.language && (
+                          <li className="flex items-center gap-3 text-gray-600">
+                            <Globe className="w-5 h-5 text-[#2D1F8F]" />
+                            {course.language}
+                          </li>
+                        )}
+                        <li className="flex items-center gap-3 text-gray-600">
+                          <Award className="w-5 h-5 text-[#2D1F8F]" />
+                          Certificate of completion
+                        </li>
+                        <li className="flex items-center gap-3 text-gray-600">
+                          <Clock className="w-5 h-5 text-[#2D1F8F]" />
+                          Lifetime access
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* What You'll Learn */}
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
+                  <Target className="w-6 h-6 text-[#2D1F8F]" />
+                  What You'll Learn
+                </h2>
+                {course?.skills && course.skills.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {course.skills.map((skill, index) => (
+                      <div key={index} className="flex items-start gap-3 bg-[#2D1F8F]/5 p-4 rounded-xl">
+                        <CheckCircle className="w-5 h-5 text-[#2D1F8F] flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700">{skill}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-
-                {/* Course Content */}
-                <div className="bg-card rounded-xl p-8">
-                  <h2 className="text-xl font-semibold mb-8">Course Content</h2>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
-                  {(course?.roadmap || []).map((day, index) => {
-                    const handleDayClick = () => {
-                      if (course?.enrollmentStatus === 'enrolled' || course?.enrollmentStatus === 'started') {
-                        // Scroll to top smoothly
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
-                    };
-
-                    return (
-                      <div 
-                        key={index} 
-                        onClick={handleDayClick}
-                        className="bg-white border rounded-lg p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-10 ease-in w-full min-h-[220px] cursor-pointer hover:scale-[1.02]"
-                        >
-                          <div className="flex items-center mb-6">
-                            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-lg">
-                              {index + 1}
-                            </div>
-                          </div>
-                          <h3 className="font-medium text-base mb-3">{day.topics}</h3>
-                          {day.description && (
-                            <p className="text-xs text-muted-foreground mb-3">
-                              {day.description}
-                            </p>
-                          )}
-                          {day.notes && (
-                            <div className="mt-4 pt-4 border-t">
-                              <p className="text-xs text-muted-foreground italic line-clamp-2">
-                                {day.notes}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                ) : (
+                  <div className="text-center py-8 px-4">
+                    <div className="w-12 h-12 rounded-full bg-[#2D1F8F]/5 flex items-center justify-center mx-auto mb-4">
+                      <Target className="w-6 h-6 text-[#2D1F8F]" />
+                    </div>
+                    <p className="text-gray-600">No skills have been specified for this course yet.</p>
                   </div>
-                </div>
+                )}
+              </div>
 
-                {/* Course Reviews Section */}
-                <div className="bg-card rounded-xl p-8 border">
-                  {course && (
-                    <CourseReviews
-                      courseId={course._id}
-                      courseTitle={course.title}
-                      reviews={reviews}
-                      onReviewsChange={handleReviewsChange}
+              {/* Course Content */}
+              <div className="mb-8">
+                {renderCourseContent()}
+              </div>
+
+              {/* Course Reviews Section */}
+              <div className="bg-white rounded-2xl p-8 border shadow-sm">
+                {course && (
+                  <CourseReviews
+                    courseId={course._id}
+                    courseTitle={course.title}
+                    reviews={reviews}
+                    onReviewsChange={handleReviewsChange}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Right Column - Enrollment Card Desktop Only */}
+            <div className="hidden lg:block">
+              <div className="bg-white rounded-2xl shadow-lg border p-6 sticky top-24">
+                <div className="space-y-6">
+                  <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-100">
+                    <img
+                      src={course?.image}
+                      alt={course?.title}
+                      className="w-full h-full object-cover"
                     />
-                  )}
+                  </div>
+
+                  {/* Price Section */}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-[#2D1F8F]">
+                      {course?.price}
+                    </span>
+                    {course?.originalPrice && (
+                      <span className="text-lg text-gray-500 line-through">
+                        {course.originalPrice}
+                      </span>
+                    )}
+                  </div>
+
+                  {actionButton}
+
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-[#2D1F8F]" />
+                      This course includes:
+                    </h4>
+                    <ul className="space-y-3">
+                      <li className="flex items-center gap-3 text-gray-600">
+                        <Play className="w-5 h-5 text-[#2D1F8F]" />
+                        {course?.duration || '10 hours'} of video content
+                      </li>
+                      {course?.language && (
+                        <li className="flex items-center gap-3 text-gray-600">
+                          <Globe className="w-5 h-5 text-[#2D1F8F]" />
+                          {course.language}
+                        </li>
+                      )}
+                      <li className="flex items-center gap-3 text-gray-600">
+                        <Award className="w-5 h-5 text-[#2D1F8F]" />
+                        Certificate of completion
+                      </li>
+                      <li className="flex items-center gap-3 text-gray-600">
+                        <Clock className="w-5 h-5 text-[#2D1F8F]" />
+                        Lifetime access
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
