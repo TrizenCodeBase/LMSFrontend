@@ -412,7 +412,7 @@ const Courses = () => {
                         <div className="flex items-center gap-2">
                           <Target className="w-4 h-4 text-gray-400" />
                           <span className="text-sm text-gray-600">
-                            {latestCourse.progress}% Complete
+                            {latestCourse.progress}% Completed
                           </span>
                         </div>
                       </div>

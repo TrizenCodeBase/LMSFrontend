@@ -117,7 +117,6 @@ const VideoPlayer = ({
             const newTime = parseFloat(data.currentTime);
             
             if (newTime > lastValidTime + 1 && newTime - lastValidTime < 10) {
-              console.log('User tried to skip forward', newTime, lastValidTime);
               iframeRef.current?.contentWindow?.postMessage(
                 JSON.stringify({
                   event: 'command',
@@ -286,12 +285,16 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
     return "📚";
   };
 
-  const getScoreMessage = (score: number) => {
+  const getScoreMessage = (score: number, attemptNumber: number) => {
     if (score >= 90) return "Excellent!";
     if (score >= 70) return "Well Done!";
-    if (score >= 50) return "Keep Going!";
-    return "Try Again";
+    if (score >= 50) return attemptNumber < 2 ? "Keep Going!" : "Review Content";
+    return attemptNumber < 2 ? "Try Again" : "Review Content";
   };
+
+  const bestScore = Math.max(...attempts.map(a => a.score));
+  const hasPassingScore = attempts.some(attempt => attempt.score >= 70);
+  const isWithinAttemptLimit = attempts.length < 2;
 
   return (
     <div className="space-y-6">
@@ -320,7 +323,7 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
                         {attempt.score}%
             </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {getScoreMessage(attempt.score)}
+                        {getScoreMessage(attempt.score, attempt.attemptNumber)}
                       </span>
                     </div>
                   </div>
@@ -361,7 +364,7 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
         ))}
       </div>
 
-      {onNextDay && attempts.some(attempt => attempt.score >= 70) && (
+      {onNextDay && hasPassingScore && (
         <div className="flex justify-center pt-6">
           <Button
             onClick={onNextDay}
@@ -371,6 +374,27 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
             <CheckCircle className="h-5 w-5" />
             <span>Continue to Next Day</span>
           </Button>
+        </div>
+      )}
+
+      {/* Show attempt limit message */}
+      {!isWithinAttemptLimit && !hasPassingScore && (
+        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800 text-center">
+            You've used all your attempts for this quiz.
+          </p>
+        </div>
+      )}
+
+      {/* Show passing score message */}
+      {hasPassingScore && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-800 text-center">
+            {bestScore === 100 
+              ? "🎉 Congratulations! You've achieved a perfect score of 100%!"
+              : `Congratulations! You've passed this quiz with a score of ${bestScore}%. You can still retake it to improve your score.`
+            }
+          </p>
         </div>
       )}
     </div>
@@ -457,6 +481,9 @@ const CourseWeekView = () => {
   // Add new state for video marking
   const [isMarkingVideo, setIsMarkingVideo] = useState(false);
 
+  // Add new state for quiz numbers
+  const [quizNumbers, setQuizNumbers] = useState<Record<number, number>>({});
+
   // Add function to extract number from duration
   const extractDurationDays = (duration: string): number => {
     const match = duration.match(/\d+/);
@@ -511,24 +538,37 @@ const CourseWeekView = () => {
     setWatchedVideos(combinedWatchedVideos);
   };
 
-  // Update the useEffect that handles completed days
+  // Add function to calculate quiz numbers
+  const calculateQuizNumbers = (roadmap: RoadmapDay[]) => {
+    const quizDays = roadmap
+      .filter(day => day.mcqs && day.mcqs.length > 0)
+      .sort((a, b) => a.day - b.day);
+
+    const numbering: Record<number, number> = {};
+    quizDays.forEach((day, index) => {
+      numbering[day.day] = index + 1;
+    });
+
+    setQuizNumbers(numbering);
+  };
+
+  // Update useEffect to calculate quiz numbers when course data is loaded
   useEffect(() => {
-    if (course && course.roadmap) {
+    if (course?.roadmap) {
+      calculateQuizNumbers(course.roadmap);
+      
       if (course.roadmap.length > 0 && selectedDay === 0) {
         setSelectedDay(course.roadmap[0].day);
       }
       
-      // Update completed days
       if (typeof course.progress === 'number' && course.roadmap) {
         if (course.completedDays) {
           setCompletedDays(course.completedDays);
-          // Sync watched videos when completed days are loaded
           syncWatchedVideosWithCompletedDays(course.completedDays);
         } else {
         const completedCount = Math.round((course.progress * course.roadmap.length) / 100);
         const newCompletedDays = Array.from({ length: completedCount }, (_, i) => i + 1);
         setCompletedDays(newCompletedDays);
-          // Sync watched videos with calculated completed days
           syncWatchedVideosWithCompletedDays(newCompletedDays);
       }
     }
@@ -682,7 +722,7 @@ const CourseWeekView = () => {
     }
   };
 
-  // Update handleQuizComplete to use the new completion logic
+  // Update handleQuizComplete function
   const handleQuizComplete = async (score: number, selectedAnswers: number[]) => {
     if (!course?.courseUrl || !token || !selectedDay) return;
 
@@ -692,46 +732,58 @@ const CourseWeekView = () => {
     try {
       // Get the current attempts for this day
       const currentAttempts = quizResults[currentDay] || [];
-      
-      // Check if max attempts reached
-      if (currentAttempts.length >= 2) {
-        toast({
-          description: (
-            <CustomToast 
-              title="Maximum Attempts Reached"
-              description="You have reached the maximum number of attempts for this quiz."
-              type="warning"
-            />
-          ),
-          duration: 3000,
-          className: "p-0 bg-transparent border-0"
-        });
-        return;
-      }
+      const attemptNumber = currentAttempts.length + 1;
 
-      const attemptNumber = currentAttempts.length > 0 
-        ? Math.max(...currentAttempts.map(a => a.attemptNumber)) + 1 
-        : 1;
-
-      // Submit to database
-      const response = await axios.post('/api/quiz-submissions', {
-        courseUrl: course.courseUrl,
+      // Prepare quiz submission data with all required fields
+      const submissionData = {
         courseId: course._id,
+        courseUrl: course.courseUrl,
         dayNumber: currentDay,
         title: `Day ${currentDay} Quiz`,
-        questions: dayData?.mcqs,
-        selectedAnswers,
-        score,
+        questions: dayData?.mcqs || [],
+        selectedAnswers: selectedAnswers,
+        score: Math.round(score),
         submittedDate: new Date().toISOString(),
-        attemptNumber,
-        isCompleted: score >= 70
-      }, {
+        attemptNumber: attemptNumber,
+        totalQuestions: dayData?.mcqs?.length || 0,
+        userId: user?.id,
+        forceRetake: true,
+        isRetake: attemptNumber > 1, // Add flag to indicate this is a retake
+        overrideCompletion: true, // Add flag to override completion check
+        allowMultipleAttempts: true // Add flag to explicitly allow multiple attempts
+      };
+
+      console.log('Submitting quiz data:', submissionData);
+
+      // Submit to database with retry logic
+      let response;
+      try {
+        response = await axios.post('/api/quiz-submissions', submissionData, {
         headers: {
-          Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'X-Allow-Retake': 'true', // Add header to indicate retake is allowed
+            'X-Attempt-Number': attemptNumber.toString() // Add attempt number in header
         }
       });
+      } catch (submitError: any) {
+        // If we get "already completed" error, try one more time with stronger override flags
+        if (submitError.response?.data?.error === 'already_completed') {
+          submissionData.forceRetake = true;
+          submissionData.overrideExisting = true; // Add additional override flag
+          response = await axios.post('/api/quiz-submissions', submissionData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'X-Allow-Retake': 'true',
+              'X-Attempt-Number': attemptNumber.toString(),
+              'X-Force-Override': 'true' // Add additional override header
+            }
+          });
+        } else {
+          throw submitError; // If it's a different error, rethrow it
+        }
+      }
 
-      if (response.data) {
+      if (response?.data) {
         // Update local state
         const newAttempt = {
           dayNumber: currentDay,
@@ -753,47 +805,42 @@ const CourseWeekView = () => {
 
         setShowQuiz(false);
 
-        // Check if we should mark the day as complete
+        // Show appropriate message based on attempt number
+        let toastMessage = '';
+        if (attemptNumber <= 2) {
+          toastMessage = `Attempt ${attemptNumber} completed! You scored ${score}%.`;
         if (score >= 70) {
-          await handleDayComplete(currentDay);
-          
-          toast({
-            description: (
-              <CustomToast 
-                title="Quiz Completed!"
-                description={`Congratulations! You scored ${score}%. The day has been marked as complete.`}
-                type="success"
-              />
-            ),
-            duration: 5000,
-            className: "p-0 bg-transparent border-0"
-          });
+            toastMessage += ' Great job!';
+          } else if (attemptNumber < 2) {
+            toastMessage += ' You have one more attempt remaining.';
+          }
         } else {
-          const remainingAttempts = 2 - attemptNumber;
+          toastMessage = `Additional attempt completed! You scored ${score}%.`;
+        }
+
           toast({
             description: (
               <CustomToast 
                 title="Quiz Submitted"
-                description={`You scored ${score}%. ${
-                  remainingAttempts > 0 
-                    ? `You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.` 
-                    : 'This was your last attempt.'
-                }`}
-                type="info"
+              description={toastMessage}
+              type={score >= 70 ? "success" : "info"}
               />
             ),
             duration: 3000,
             className: "p-0 bg-transparent border-0"
           });
-        }
       }
     } catch (error: any) {
       console.error('Error submitting quiz:', error);
+      const errorMessage = error.response?.data?.message || "Failed to submit quiz. Please try again.";
+      console.log('Server error:', errorMessage);
+      console.log('Error response:', error.response?.data);
+      
       toast({
         description: (
           <CustomToast 
             title="Error"
-            description={error.response?.data?.message || "Failed to submit quiz. Please try again."}
+            description={errorMessage}
             type="error"
           />
         ),
@@ -1155,13 +1202,14 @@ const CourseWeekView = () => {
     if (!course?.courseUrl || !token) return;
     
     try {
-      const { data: responseData } = await axios.get<QuizSubmissionResponse>(`/api/quiz-submissions/${course.courseUrl}`, {
+      // Use the specific endpoint that includes user's submissions
+      const { data: responseData } = await axios.get<QuizSubmissionResponse>(`/api/quiz-submissions/${course.courseUrl}/${selectedDay}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
 
-      const submissions = responseData.data;
+      const submissions = responseData.data || [];
       const newQuizResults: Record<number, QuizAttempt[]> = {};
       const completedQuizzes: number[] = [];
 
@@ -1174,7 +1222,7 @@ const CourseWeekView = () => {
           dayNumber: dayNum,
           score: submission.score,
           completedAt: new Date(submission.submittedDate),
-          totalQuestions: submission.questions.length,
+          totalQuestions: submission.questions?.length || 0,
           attemptNumber: submission.attemptNumber
         });
         if (!completedQuizzes.includes(dayNum)) {
@@ -1184,7 +1232,9 @@ const CourseWeekView = () => {
 
       // Sort attempts by attemptNumber in descending order
       Object.keys(newQuizResults).forEach(dayNum => {
-        newQuizResults[parseInt(dayNum)].sort((a, b) => b.attemptNumber - a.attemptNumber);
+        if (newQuizResults[dayNum] && newQuizResults[dayNum].length > 0) {
+          newQuizResults[parseInt(dayNum)].sort((a, b) => b.attemptNumber - a.attemptNumber);
+        }
       });
 
       setQuizResults(newQuizResults);
@@ -1436,7 +1486,7 @@ const CourseWeekView = () => {
                       "h-4 w-4",
                       quizResults[day.day]?.some(attempt => attempt.score >= 70) && "text-emerald-600"
                     )} />
-                    <span>Take Quiz ({day.mcqs.length} questions)</span>
+                    <span>Quiz {quizNumbers[day.day] || ''} ({day.mcqs.length} questions)</span>
                     {quizResults[day.day]?.some(attempt => attempt.score >= 70) && (
                       <CheckCircle className="h-3.5 w-3.5 ml-auto text-emerald-600" />
                     )}
@@ -1843,9 +1893,11 @@ const CourseWeekView = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
                           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
-                            Quiz {course?.roadmap.findIndex(day => day.mcqs && day.mcqs.length > 0 && day.day <= currentDay.day) + 1}
+                            Quiz {quizNumbers[currentDay.day] || ''}
                           </h1>
-                          <p className="text-sm sm:text-base text-muted-foreground">Test your understanding of all the content you've learned so far.</p>
+                          <p className="text-sm sm:text-base text-muted-foreground">
+                            Test your understanding of all the content you've learned so far.
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
@@ -1873,6 +1925,22 @@ const CourseWeekView = () => {
                             <ArrowLeft className="h-4 w-4" />
                             Back to Content
                           </Button>
+                        </div>
+                      </div>
+
+                      {/* Quiz Instructions Alert */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                          <div className="space-y-1">
+                            <h3 className="font-medium text-blue-900">Important Instructions</h3>
+                            <ul className="text-sm text-blue-800 space-y-1 list-disc ml-4">
+                              <li>You have a maximum of 2 attempts for this quiz</li>
+                              <li>Each attempt will be recorded and scored separately</li>
+                              {/* <li>A score of 70% or higher is required to pass</li>
+                              <li>Take your time - there's no time limit</li> */}
+                            </ul>
+                          </div>
                         </div>
                       </div>
 
@@ -1946,15 +2014,37 @@ const CourseWeekView = () => {
                                     <div className="border-t pt-6 mt-8">
                                       <div className="max-w-2xl mx-auto">
                                         <div className="text-center space-y-3 mb-6">
-                                          <h3 className="text-lg sm:text-xl font-semibold">Ready for Another Attempt?</h3>
+                                          <h3 className="text-lg sm:text-xl font-semibold">
+                                            {quizResults[currentDay.day].length >= 2 
+                                              ? "Maximum Attempts Reached"
+                                              : quizResults[currentDay.day][0]?.score === 100
+                                              ? "Perfect Score!"
+                                              : "Ready for Another Attempt?"}
+                                          </h3>
                                           <p className="text-muted-foreground">
                                             Your best score so far: {Math.max(...quizResults[currentDay.day].map(a => a.score))}%
                                           </p>
-                                          {quizResults[currentDay.day].some(attempt => attempt.score >= 70) && (
+                                          {quizResults[currentDay.day][0]?.score === 100 && quizResults[currentDay.day].length === 1 && (
+                                            <div className="mt-2 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                                              <p className="text-sm text-emerald-800 flex items-center gap-2 justify-center">
+                                                <CheckCircle className="h-4 w-4" />
+                                                <span>🎉 Excellent! You've achieved a perfect score on your first attempt. No need for another try!</span>
+                                              </p>
+                                            </div>
+                                          )}
+                                          {quizResults[currentDay.day].some(attempt => attempt.score >= 70) && quizResults[currentDay.day][0]?.score !== 100 && (
                                             <div className="mt-2 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                                               <p className="text-sm text-emerald-800 flex items-center gap-2 justify-center">
                                                 <CheckCircle className="h-4 w-4" />
                                                 <span>You've passed this quiz! Click "Complete & Continue" to mark this day as complete and move to the next day.</span>
+                                              </p>
+                                            </div>
+                                          )}
+                                          {quizResults[currentDay.day].length >= 2 && (
+                                            <div className="mt-2 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                              <p className="text-sm text-yellow-800 flex items-center gap-2 justify-center">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <span>You've completed your 2 attempts. Please continue with the course, the day will be marked as complete and you will be redirected to the next day.</span>
                                               </p>
                                             </div>
                                           )}
@@ -1963,11 +2053,31 @@ const CourseWeekView = () => {
                             <Button 
                               onClick={() => setShowQuiz(true)}
                                             size="lg"
-                                            className="w-full sm:w-auto min-w-[200px] text-base sm:text-lg py-4 sm:py-6 bg-primary hover:bg-primary/90"
+                                            disabled={quizResults[currentDay.day].length >= 2 || quizResults[currentDay.day][0]?.score === 100}
+                                            className={cn(
+                                              "w-full sm:w-auto min-w-[200px] text-base sm:text-lg py-4 sm:py-6",
+                                              (quizResults[currentDay.day].length >= 2 || quizResults[currentDay.day][0]?.score === 100)
+                                                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                                                : "bg-primary hover:bg-primary/90"
+                                            )}
                             >
                                             <div className="flex items-center gap-2">
+                                              {quizResults[currentDay.day].length >= 2 ? (
+                                                <>
+                                                  <Lock className="h-4 sm:h-5 w-4 sm:w-5" />
+                                                  <span>No More Attempts</span>
+                                                </>
+                                              ) : quizResults[currentDay.day][0]?.score === 100 ? (
+                                                <>
+                                                  <CheckCircle className="h-4 sm:h-5 w-4 sm:w-5" />
+                                                  <span>Perfect Score Achieved</span>
+                                                </>
+                                              ) : (
+                                                <>
                                               <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5" />
                                               <span>Try Again</span>
+                                                </>
+                                              )}
                                             </div>
                             </Button>
                                           <Button
@@ -2002,7 +2112,7 @@ const CourseWeekView = () => {
                                     <div className="text-center space-y-3">
                                       <h3 className="text-lg sm:text-xl font-semibold">Ready to Test Your Knowledge?</h3>
                                       <p className="text-muted-foreground">
-                                        Complete this quiz to track your understanding
+                                        Complete this quiz to track your understanding. You have 2 attempts available.
                                       </p>
                               </div>
                                     <div className="flex justify-center">
@@ -2029,6 +2139,7 @@ const CourseWeekView = () => {
                                 onCancel={() => setShowQuiz(false)}
                                 dayNumber={currentDay.day}
                                 courseUrl={course.courseUrl}
+                                quizNumber={quizNumbers[currentDay.day] || currentDay.day} // Add quiz number prop
                               />
                               <Button
                                 variant="outline"

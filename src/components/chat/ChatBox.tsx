@@ -64,14 +64,14 @@ export const ChatBox = ({
   return (
     <div 
       className={cn(
-        "flex flex-col h-[500px] bg-background border rounded-lg shadow-sm",
+        "flex flex-col h-[500px] bg-background border rounded-lg shadow-sm overflow-hidden",
         className
       )}
     >
       {/* Messages Container */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="flex-1 overflow-y-auto px-4 py-6 space-y-6"
         onScroll={handleScroll}
       >
         {messages.map((message) => {
@@ -81,20 +81,29 @@ export const ChatBox = ({
             <div
               key={message.id}
               className={cn(
-                "flex items-start gap-2 max-w-[80%]",
+                "flex gap-3 max-w-[85%]",
                 isOwnMessage ? "ml-auto flex-row-reverse" : ""
               )}
             >
               {/* Avatar */}
-              <Avatar className="h-8 w-8 flex-shrink-0">
-                <AvatarFallback>
+              <Avatar className="h-8 w-8 flex-shrink-0 mt-1">
+                <AvatarFallback className={cn(
+                  "text-xs font-medium",
+                  isOwnMessage ? "bg-primary/10 text-primary" : "bg-muted"
+                )}>
                   {getInitials(message.sender.name)}
                 </AvatarFallback>
               </Avatar>
 
               {/* Message Content */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
+              <div className={cn(
+                "flex flex-col gap-1.5",
+                isOwnMessage ? "items-end" : "items-start"
+              )}>
+                <div className={cn(
+                  "flex items-center gap-2",
+                  isOwnMessage && "flex-row-reverse"
+                )}>
                   <span className="text-sm font-medium">
                     {message.sender.name}
                   </span>
@@ -107,10 +116,10 @@ export const ChatBox = ({
                 
                 <div
                   className={cn(
-                    "rounded-lg px-3 py-2 text-sm",
+                    "rounded-2xl px-4 py-2.5 text-sm",
                     isOwnMessage
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted",
+                      ? "bg-primary text-primary-foreground rounded-tr-none"
+                      : "bg-muted rounded-tl-none",
                     message.sender.role === 'instructor' && !isOwnMessage
                       ? "bg-blue-50 dark:bg-blue-900/20"
                       : ""
@@ -119,8 +128,8 @@ export const ChatBox = ({
                   {message.content}
                 </div>
                 
-                <span className="text-xs text-muted-foreground">
-                  {format(new Date(message.timestamp), 'MMM d, h:mm a')}
+                <span className="text-[11px] text-muted-foreground/70">
+                  {format(new Date(message.timestamp), 'h:mm a')}
                 </span>
               </div>
             </div>
@@ -129,13 +138,13 @@ export const ChatBox = ({
 
         {/* Typing Indicator */}
         {isTyping && typingUserId && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground/70 pl-12">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" />
-              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:0.2s]" />
-              <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:0.4s]" />
+              <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" />
+              <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:0.2s]" />
+              <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:0.4s]" />
             </div>
-            <span>typing...</span>
+            <span className="text-xs">typing...</span>
           </div>
         )}
         

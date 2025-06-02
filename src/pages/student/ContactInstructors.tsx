@@ -392,16 +392,16 @@ const ContactInstructorsPage: React.FC = () => {
                                         </AvatarFallback>
                                       </Avatar>
                                     )}
-                                    <div className="group relative">
+                                    <div className="group relative max-w-[70%]">
                                       <div
                                         className={cn(
-                                          "max-w-[70%] p-3 rounded-xl shadow-sm",
+                                          "p-3 rounded-xl shadow-sm",
                                           message.senderId._id === selectedInstructor
                                             ? "bg-white text-foreground rounded-tl-none"
                                             : "bg-[#3F3FFF] text-white rounded-tr-none"
                                         )}
                                       >
-                                        <p className="text-sm break-words">{message.content}</p>
+                                        <p className="text-sm break-words whitespace-normal">{message.content}</p>
                                       </div>
                                       <TooltipProvider>
                                         <Tooltip>

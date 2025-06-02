@@ -26,10 +26,14 @@ import {
   Award,
   BarChart2,
   Activity,
-  Search
+  Search,
+  Sun,
+  Moon
 } from "lucide-react";
 import { useAdminDashboard } from '@/hooks/use-admin-dashboard';
 import { PageLoader } from '@/components/loaders';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from 'next-themes';
 import axios from '@/lib/axios';
 
 interface User {
@@ -92,13 +96,14 @@ const extractDuration = (daysCompletedPerDuration: string): number => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  
+  const { theme, setTheme } = useTheme();
   const { data, isLoading, error, refetch } = useAdminDashboard();
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
+  const [showActivityPanel, setShowActivityPanel] = useState(true);
   
   // Fetch courses from MongoDB courses collection
   useEffect(() => {
@@ -305,7 +310,13 @@ const AdminDashboard = () => {
   if (isLoading) {
     return (
       <AdminLayout>
-        <PageLoader message="Loading dashboard data..." />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <PageLoader message="Loading dashboard data..." />
+        </motion.div>
       </AdminLayout>
     );
   }
@@ -313,13 +324,18 @@ const AdminDashboard = () => {
   if (error || !data) {
     return (
       <AdminLayout>
-        <div className="flex flex-col items-center justify-center h-[600px]">
+        <motion.div 
+          className="flex flex-col items-center justify-center h-[600px]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
           <p className="text-lg font-medium text-red-500">Failed to load dashboard data</p>
           <Button onClick={() => refetch()} className="mt-4">
             Retry
           </Button>
-        </div>
+        </motion.div>
       </AdminLayout>
     );
   }
@@ -329,7 +345,8 @@ const AdminDashboard = () => {
       title: "Total Students", 
       value: data.userStats.totalStudents, 
       icon: Users, 
-      color: "bg-blue-100 text-blue-600",
+      color: "from-blue-50 to-blue-100",
+      textColor: "text-blue-600",
       change: "+12% from last month",
       metric: "Active learners"
     },
@@ -337,7 +354,8 @@ const AdminDashboard = () => {
       title: "Total Courses", 
       value: data.courseStats.totalCourses, 
       icon: BookOpen, 
-      color: "bg-green-100 text-green-600",
+      color: "from-green-50 to-green-100",
+      textColor: "text-green-600",
       change: "+5 new this month",
       metric: "Published courses"
     },
@@ -345,7 +363,8 @@ const AdminDashboard = () => {
       title: "Total Instructors", 
       value: data.userStats.totalInstructors, 
       icon: GraduationCap, 
-      color: "bg-purple-100 text-purple-600",
+      color: "from-purple-50 to-purple-100",
+      textColor: "text-purple-600",
       change: "+3 new instructors",
       metric: "Active teachers"
     },
@@ -353,314 +372,544 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <motion.div 
+        className="space-y-6 px-6 py-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {/* Header Section */}
         <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-          <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
-            <p className="text-muted-foreground">Welcome back, Admin! Here's what's happening.</p>
-          </div>
-          <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
+            <p className="text-muted-foreground mt-1">Welcome back, Admin! Here's what's happening.</p>
+          </motion.div>
+          <motion.div 
+            className="flex items-center gap-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-10 h-10 rounded-full"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+            <Button 
+              variant="outline" 
               onClick={handleFullRefresh}
-              className="flex items-center gap-2 border-primary text-primary hover:bg-primary/10 hover:text-primary font-semibold shadow-sm transition-all"
+              className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 transition-all duration-300"
             >
               <Clock className="h-4 w-4" />
               Last updated: {new Date().toLocaleTimeString()}
             </Button>
             <Button 
               onClick={handleFullRefresh}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-500 text-white font-semibold shadow-md hover:from-blue-700 hover:to-indigo-600 transition-all"
+              className="flex items-center gap-2 bg-primary text-white hover:bg-primary/90 transition-all duration-300"
             >
               <Activity className="h-4 w-4" />
-            Refresh Data
-          </Button>
-          </div>
+              Refresh Data
+            </Button>
+          </motion.div>
         </div>
-        
-        {/* Quick Actions Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Pending Enrollments Card */}
-          {data.enrollmentStats.pendingEnrollments > 0 && (
-            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-yellow-100 text-yellow-600">
-                  <Bell className="h-5 w-5" />
-                </div>
-                    <h3 className="font-semibold text-lg">Pending Enrollments</h3>
-              </div>
-              <Button 
-                onClick={() => navigate('/admin/enrollment-requests')}
-                variant="outline" 
-                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatePresence>
+            {data.enrollmentStats.pendingEnrollments > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
               >
-                Review Requests
-              </Button>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Pending Requests</span>
-                    <span className="font-medium">{data.enrollmentStats.pendingEnrollments}</span>
-                  </div>
-                  <Progress value={75} className="h-2 bg-yellow-100" />
-                  <p className="text-sm text-yellow-700">
-                    {data.enrollmentStats.pendingEnrollments} requests need your attention
-                  </p>
-                </div>
-            </CardContent>
-          </Card>
-        )}
-          
-          {/* Pending Instructor Applications Card */}
-          {data.instructorStats.pendingApplications > 0 && (
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-blue-100 text-blue-600">
-                    <UserCog className="h-5 w-5" />
-                  </div>
-                    <h3 className="font-semibold text-lg">Instructor Applications</h3>
-                </div>
-                <Button 
-                  onClick={() => navigate('/admin/instructor-approvals')}
-                  variant="outline" 
-                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                >
-                  Review Applications
-                </Button>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Pending Applications</span>
-                    <span className="font-medium">{data.instructorStats.pendingApplications}</span>
-                  </div>
-                  <Progress value={60} className="h-2 bg-blue-100" />
-                  <p className="text-sm text-blue-700">
-                    {data.instructorStats.pendingApplications} applications awaiting review
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                <Card className="overflow-hidden border-0 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <motion.div 
+                          className="p-2 rounded-full bg-yellow-100 text-yellow-600"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Bell className="h-5 w-5" />
+                        </motion.div>
+                        <h3 className="font-semibold text-lg">Pending Enrollments</h3>
+                      </div>
+                      <Button 
+                        onClick={() => navigate('/admin/enrollment-requests')}
+                        variant="outline" 
+                        className="border-yellow-200 text-yellow-700 hover:bg-yellow-100/50 transition-all duration-300"
+                      >
+                        Review Requests
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Pending Requests</span>
+                        <motion.span 
+                          className="font-medium"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          {data.enrollmentStats.pendingEnrollments}
+                        </motion.span>
+                      </div>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      >
+                        <Progress value={75} className="h-2 bg-yellow-100" />
+                      </motion.div>
+                      <p className="text-sm text-yellow-700">
+                        {data.enrollmentStats.pendingEnrollments} requests need your attention
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {data.instructorStats.pendingApplications > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <motion.div 
+                          className="p-2 rounded-full bg-blue-100 text-blue-600"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <UserCog className="h-5 w-5" />
+                        </motion.div>
+                        <h3 className="font-semibold text-lg">Instructor Applications</h3>
+                      </div>
+                      <Button 
+                        onClick={() => navigate('/admin/instructor-approvals')}
+                        variant="outline" 
+                        className="border-blue-200 text-blue-700 hover:bg-blue-100/50 transition-all duration-300"
+                      >
+                        Review Applications
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Pending Applications</span>
+                        <motion.span 
+                          className="font-medium"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          {data.instructorStats.pendingApplications}
+                        </motion.span>
+                      </div>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      >
+                        <Progress value={60} className="h-2 bg-blue-100" />
+                      </motion.div>
+                      <p className="text-sm text-blue-700">
+                        {data.instructorStats.pendingApplications} applications awaiting review
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        
+
         {/* Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {statCards.map((card, index) => (
-            <Card key={index} className="overflow-hidden shadow-md border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100 hover:shadow-xl transition-all">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2.5 rounded-full ${card.color} shadow-md`}>
-                  <card.icon className="h-6 w-6" />
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card className="overflow-hidden border-0 bg-white/80 hover:bg-white/90 transition-all duration-300">
+                <CardContent className="p-6">
+                  <motion.div 
+                    className="flex items-center justify-between mb-4"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className={`p-2 rounded-lg ${card.color}`}>
+                      <card.icon className={`h-5 w-5 ${card.textColor}`} />
+                    </div>
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  </motion.div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
+                    <motion.div 
+                      className="flex items-baseline gap-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      <h3 className="text-2xl font-semibold text-primary">{card.value.toLocaleString()}</h3>
+                      <span className="text-xs text-green-500">{card.change}</span>
+                    </motion.div>
+                    <p className="text-xs text-muted-foreground">{card.metric}</p>
                   </div>
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
-                  <div className="flex items-baseline gap-2">
-                    <h3 className="text-2xl font-bold text-primary drop-shadow-sm">{card.value.toLocaleString()}</h3>
-                    <span className="text-xs text-green-500">{card.change}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{card.metric}</p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
 
         {/* Platform Metrics */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 max-w-6xl mx-auto">
           {/* Course Engagement */}
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-white via-indigo-50 to-blue-100">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-primary drop-shadow-sm">
-                    <BarChart2 className="h-5 w-5 text-primary" />
-                    Course Engagement
-                  </CardTitle>
-                  <CardDescription>
-                    {courses.length} Courses Available
-                  </CardDescription>
-                </div>
-                <Select
-                  value={selectedCourse}
-                  onValueChange={(value) => {
-                    setSelectedCourse(value);
-                    setCourseProgress([]); // Clear previous progress
-                  }}
-                  disabled={isLoadingCourses}
-                >
-                  <SelectTrigger className="w-[280px] border-primary focus:ring-2 focus:ring-primary/50">
-                    <SelectValue>
-                      {isLoadingCourses 
-                        ? "Loading courses..." 
-                        : (courses.find(c => c._id === selectedCourse)?.title || "Select a course")}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.length === 0 ? (
-                      <SelectItem value="no-courses" disabled>
-                        No courses available
-                      </SelectItem>
-                    ) : (
-                      courses.map((course) => (
-                        <SelectItem 
-                          key={course._id} 
-                          value={course._id}
-                          className="flex flex-col items-start py-2"
-                        >
-                          <div className="font-medium">{course.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {course.instructor} • {course.duration}
-                          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full"
+          >
+            <Card className="border-0 bg-white/90 transition-all duration-300 dark:bg-gray-950/90">
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 group">
+                      <BarChart2 className="h-4 w-4 text-primary" />
+                      <motion.span
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-primary"
+                      >
+                        Course Engagement
+                      </motion.span>
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {courses.length} Courses Available
+                      </span>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-muted-foreground">
+                        {currentStudents.length} Active Students
+                      </span>
+                    </CardDescription>
+                  </div>
+                  <Select
+                    value={selectedCourse}
+                    onValueChange={(value) => {
+                      setSelectedCourse(value);
+                      setCourseProgress([]);
+                    }}
+                    disabled={isLoadingCourses}
+                  >
+                    <SelectTrigger className="w-full md:w-[280px] border-input focus:ring-1 focus:ring-ring">
+                      <SelectValue>
+                        {isLoadingCourses 
+                          ? "Loading courses..." 
+                          : (courses.find(c => c._id === selectedCourse)?.title || "Select a course")}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {courses.length === 0 ? (
+                        <SelectItem value="no-courses" disabled>
+                          No courses available
                         </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Course Summary Stats */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 p-4 rounded-lg bg-muted/50 shadow-sm">
-                    <div className="flex justify-between text-sm">
-                      <span>Active Students</span>
-                      <span className="font-medium">{activeStudentsPercentage}%</span>
-                    </div>
-                    <Progress value={activeStudentsPercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground">Last 7 days</p>
-                  </div>
-                  <div className="space-y-2 p-4 rounded-lg bg-muted/50 shadow-sm">
-                    <div className="flex justify-between text-sm">
-                      <span>Completion Rate</span>
-                      <span className="font-medium">{averageCompletion}%</span>
-                    </div>
-                    <Progress value={averageCompletion} className="h-2" />
-                    <p className="text-xs text-muted-foreground">Course average</p>
-                  </div>
-                </div>
-
-                {/* Student Progress List */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-semibold tracking-wide text-primary">
-                      Student Progress ({currentStudents.length} students)
-                    </h4>
-                    {(isLoadingCourses || isLoadingProgress) && (
-                      <span className="text-xs text-muted-foreground">Loading...</span>
-                    )}
-                  </div>
-                  {isLoadingCourses ? (
-                    <div className="h-[300px] flex items-center justify-center">
-                      <p className="text-muted-foreground">Loading courses...</p>
-                    </div>
-                  ) : isLoadingProgress ? (
-                    <div className="h-[300px] flex items-center justify-center">
-                      <p className="text-muted-foreground">Loading student progress...</p>
-                    </div>
-                  ) : !selectedCourse ? (
-                    <div className="h-[300px] flex items-center justify-center">
-                      <p className="text-muted-foreground">Please select a course</p>
-                    </div>
-                  ) : currentStudents.length === 0 ? (
-                    <div className="h-[300px] flex items-center justify-center">
-                      <p className="text-muted-foreground">No students enrolled in this course</p>
-                    </div>
-                  ) : (
-                    <ScrollArea className="h-[320px] w-full rounded-md border bg-muted/30">
-                      <div className="grid grid-cols-1 gap-3 p-4">
-                        {currentStudents.map((student) => {
-                          const [completed, total] = student.daysCompletedPerDuration.split('/').map(Number);
-                          const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-                          const lastAccessed = new Date(student.lastAccessedAt).toLocaleDateString();
-                          const isComplete = percentage === 100;
-                          return (
-                            <div key={student._id} 
-                                 className={`flex items-center gap-6 p-5 rounded-xl shadow-sm bg-white border border-muted/40 hover:shadow-md transition-all group relative ${isComplete ? 'ring-2 ring-green-200' : ''}`}
-                                 title={isComplete ? 'Completed' : 'In Progress'}>
-                              {/* Avatar Circle */}
-                              <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl border border-primary/20">
-                                {student.name ? student.name.charAt(0).toUpperCase() : '?'}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="font-medium text-base" title={student.name}>{student.name}</span>
-                                  {isComplete && (
-                                    <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-semibold">Completed</span>
-                                  )}
-                                  {!isComplete && (
-                                    <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 font-semibold">{student.status}</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
-                                  <span>Last accessed: {lastAccessed}</span>
-                                  <span className="mx-1">•</span>
-                                  <span>Progress: <span className="font-semibold text-primary">{percentage}%</span></span>
-                                  <span className="mx-1">•</span>
-                                  <span className="font-medium">{completed} / {total} days</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Progress value={percentage} className="h-2.5 flex-1 bg-muted/40" />
-                                </div>
-                              </div>
+                      ) : (
+                        courses.map((course) => (
+                          <SelectItem 
+                            key={course._id} 
+                            value={course._id}
+                            className="flex flex-col items-start py-2 hover:bg-accent cursor-pointer"
+                          >
+                            <div className="font-medium text-base">{course.title}</div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-xs text-muted-foreground">
+                                {course.instructor}
+                              </span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground">
+                                {course.duration}
+                              </span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-                  )}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Course Summary Stats */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <motion.div 
+                      className="space-y-2 p-4 rounded-lg bg-accent/50 transition-all duration-300"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex justify-between text-sm">
+                        <span>Active Students</span>
+                        <span className="font-medium text-primary">{activeStudentsPercentage}%</span>
+                      </div>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      >
+                        <Progress 
+                          value={activeStudentsPercentage} 
+                          className="h-2 transition-all duration-300" 
+                          style={{
+                            background: `linear-gradient(90deg, var(--primary) ${activeStudentsPercentage}%, var(--muted) ${activeStudentsPercentage}%)`
+                          }}
+                        />
+                      </motion.div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="h-3 w-3" />
+                        Last 7 days
+                      </p>
+                    </motion.div>
+                    <motion.div 
+                      className="space-y-2 p-4 rounded-lg bg-accent/50 transition-all duration-300"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex justify-between text-sm">
+                        <span>Completion Rate</span>
+                        <span className="font-medium text-primary">{averageCompletion}%</span>
+                      </div>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      >
+                        <Progress 
+                          value={averageCompletion} 
+                          className="h-2 transition-all duration-300"
+                          style={{
+                            background: `linear-gradient(90deg, var(--primary) ${averageCompletion}%, var(--muted) ${averageCompletion}%)`
+                          }}
+                        />
+                      </motion.div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <TrendingUp className="h-3 w-3" />
+                        Course average
+                      </p>
+                    </motion.div>
+                  </div>
+
+                  {/* Student Progress List */}
+                  <AnimatePresence>
+                    <motion.div 
+                      className="space-y-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold tracking-wide text-primary">
+                          Student Progress ({currentStudents.length} students)
+                        </h4>
+                        {(isLoadingCourses || isLoadingProgress) && (
+                          <span className="text-xs text-muted-foreground">Loading...</span>
+                        )}
+                      </div>
+                      
+                      <ScrollArea className="h-[400px] w-full rounded-lg border border-border bg-accent/50">
+                        <div className="grid grid-cols-1 gap-3 p-4">
+                          <AnimatePresence>
+                            {currentStudents.map((student, index) => {
+                              const [completed, total] = student.daysCompletedPerDuration.split('/').map(Number);
+                              const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+                              const lastAccessed = new Date(student.lastAccessedAt).toLocaleDateString();
+                              const isComplete = percentage === 100;
+                              
+                              return (
+                                <motion.div
+                                  key={student._id}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -20 }}
+                                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                                  whileHover={{ scale: 1.01, x: 4 }}
+                                >
+                                  <div 
+                                    className={`flex items-center gap-4 p-4 rounded-lg bg-background border border-border hover:bg-accent/50 transition-all group relative ${
+                                      isComplete ? 'ring-1 ring-primary/20' : ''
+                                    }`}
+                                  >
+                                    <motion.div 
+                                      className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg"
+                                      whileHover={{ scale: 1.05, rotate: 5 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      transition={{ duration: 0.2 }}
+                                    >
+                                      {student.name ? student.name.charAt(0).toUpperCase() : '?'}
+                                    </motion.div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="font-medium">{student.name}</span>
+                                        {isComplete && (
+                                          <motion.span 
+                                            className="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700 font-medium dark:bg-emerald-900/50 dark:text-emerald-300"
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            whileHover={{ scale: 1.05 }}
+                                          >
+                                            Completed
+                                          </motion.span>
+                                        )}
+                                        {!isComplete && (
+                                          <motion.span 
+                                            className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            whileHover={{ scale: 1.05 }}
+                                          >
+                                            {student.status}
+                                          </motion.span>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
+                                        <span>Last accessed: {lastAccessed}</span>
+                                        <span className="mx-1">•</span>
+                                        <span>Progress: <span className="font-medium text-primary">{percentage}%</span></span>
+                                        <span className="mx-1">•</span>
+                                        <span className="font-medium">{completed} / {total} days</span>
+                                      </div>
+                                      <motion.div 
+                                        className="flex items-center gap-2"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: "100%" }}
+                                        transition={{ duration: 0.8, ease: "easeOut" }}
+                                      >
+                                        <Progress 
+                                          value={percentage} 
+                                          className="h-2 flex-1 transition-all duration-300"
+                                          style={{
+                                            background: `linear-gradient(90deg, var(--primary) ${percentage}%, var(--muted) ${percentage}%)`
+                                          }}
+                                        />
+                                      </motion.div>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </AnimatePresence>
+                        </div>
+                      </ScrollArea>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary" />
-                    Recent Activity
-                  </CardTitle>
-                  <CardDescription>Latest actions and events</CardDescription>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="w-full"
+          >
+            <Card className="border-0 bg-white/90 transition-all duration-300 dark:bg-gray-950/90">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 group">
+                      <Activity className="h-4 w-4 text-primary" />
+                      <motion.span
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-primary"
+                      >
+                        Recent Activity
+                      </motion.span>
+                    </CardTitle>
+                    <CardDescription>Latest actions and events</CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowActivityPanel(!showActivityPanel)}
+                    className="w-8 h-8 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 transition-colors duration-300 dark:hover:from-violet-950/40 dark:hover:to-indigo-950/40"
+                  >
+                    <motion.div
+                      animate={{ rotate: showActivityPanel ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <TrendingUp className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </motion.div>
+                  </Button>
                 </div>
-              </div>
-          </CardHeader>
-          <CardContent>
-              <ScrollArea className="h-[340px] w-full pr-2">
-                <div className="space-y-4">
-                  {data.recentActivities.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">No recent activity found.</div>
-                  ) : (
-                    data.recentActivities.map((activity, index) => (
-                      <div key={activity.id || index} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="p-2 rounded-full bg-primary/10">
-                          <Award className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <AnimatePresence>
+                {showActivityPanel && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <CardContent>
+                      <ScrollArea className="h-[300px] w-full pr-2">
+                        <div className="space-y-4">
+                          <AnimatePresence>
+                            {data.recentActivities.map((activity, index) => (
+                              <motion.div
+                                key={activity.id || index}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                whileHover={{ x: 4, scale: 1.01 }}
+                              >
+                                <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-indigo-50/50 transition-all duration-300 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20">
+                                  <motion.div 
+                                    className="p-2 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900 dark:to-indigo-900"
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <Award className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                  </motion.div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate text-indigo-900 dark:text-indigo-100">{activity.action}</p>
+                                    <p className="text-xs text-muted-foreground">{activity.user}</p>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {activity.time}
+                                  </span>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{activity.action}</p>
-                          <p className="text-xs text-muted-foreground">{activity.user}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {activity.time}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-          </CardContent>
-        </Card>
+                      </ScrollArea>
+                    </CardContent>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </AdminLayout>
   );
 };

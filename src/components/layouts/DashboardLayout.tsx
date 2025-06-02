@@ -4,7 +4,7 @@ import {
   LayoutDashboard, BookOpen, FileText, Calendar, 
   MessageSquare, GraduationCap, UserCircle, 
   Settings, LogOut, ChevronLeft, Menu, ArrowLeft,
-  Users, ClipboardCheck, Video, MessageCircle, HelpCircle, Headphones
+  Users, ClipboardCheck, Video, MessageCircle, HelpCircle, Headphones, Trophy
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
@@ -115,6 +115,7 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
     { icon: GraduationCap, name: 'My Courses', path: '/my-courses' },
     { icon: FileText, name: 'Assignments', path: '/assignments' },
     { icon: MessageCircle, name: 'Discussions', path: '/discussions' },
+    { icon: Trophy, name: 'Leaderboard', path: '/leaderboard' },
     { icon: Users, name: 'Contact Instructors', path: '/contact-instructors' },
     { icon: Calendar, name: 'Calendar', path: '/calendar' },
   ];
@@ -160,11 +161,11 @@ const DashboardLayout = ({ children, courseTitle }: DashboardLayoutProps) => {
         <>
           <aside 
             className={`fixed inset-y-0 left-0 z-50 bg-white shadow-[0_0_30px_rgba(45,31,143,0.07)] transition-all duration-500 ease-in-out ${
-              collapsed ? 'w-20' : 'w-64'
+              collapsed ? 'w-20 overflow-hidden' : 'w-64'
             } ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
           >
             {/* Sidebar content */}
-            <div className="flex flex-col h-full">
+            <div className={`flex flex-col h-full ${collapsed ? 'overflow-hidden' : 'overflow-y-auto'}`}>
               <div className="p-4 flex items-center justify-between border-b border-gray-100">
                 {!collapsed && (
                   <Link to="/" className="flex items-center transform transition-transform duration-300 hover:scale-105">

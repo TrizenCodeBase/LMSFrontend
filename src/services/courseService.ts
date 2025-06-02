@@ -33,6 +33,13 @@ export interface Course {
   instructorId: string;
   instructorAvatar?: string;
   instructorTitle?: string;
+  instructorDetails?: {
+    name: string;
+    email: string;
+    profilePicture?: string;
+    bio?: string;
+    userId?: string;
+  };
   duration: string;
   totalLessons: number;
   totalModules: number;

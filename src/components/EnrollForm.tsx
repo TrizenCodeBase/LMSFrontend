@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useCourseDetails, useEnrollCourse, useUpdateProgress, useReviewCounts } from '@/services/courseService';
+import { useInstructorFromUsers } from '@/services/instructorService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from "@/components/layouts/DashboardLayout";
@@ -50,7 +51,7 @@ interface Instructor {
   _id: string;
   name: string;
   email: string;
-  avatar?: string;
+  profilePicture?: string;
   title?: string;
 }
 
@@ -72,6 +73,7 @@ interface Course {
   students?: number;
   skills?: string[];
   originalPrice?: number;
+  instructorDetails?: Instructor;
 }
 
 interface EnrollFormProps {
@@ -88,6 +90,10 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   
   const { data: course, isLoading, isError, refetch } = useCourseDetails(courseId);
+  
+  // Get instructor details directly from the course data
+  const instructorDetails = course?.instructorDetails;
+
   const enrollMutation = useEnrollCourse();
   const updateProgressMutation = useUpdateProgress();
 
@@ -110,9 +116,7 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
       try {
         const response = await axios.get<Review[]>(`/api/courses/${course._id}/reviews`);
         setReviews(response.data);
-        console.log('Fetched reviews:', response.data);
       } catch (error) {
-        console.error('Error fetching reviews:', error);
       }
     };
     fetchReviews();
@@ -124,7 +128,6 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
       axios.get<Review[]>(`/api/courses/${course._id}/reviews`)
         .then(response => {
           setReviews(response.data);
-          console.log('Updated reviews:', response.data);
         })
         .catch(error => console.error('Error fetching reviews:', error));
     }
@@ -518,86 +521,86 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50/50">
-        {/* Hero Section */}
-        <div className="bg-[#2D1F8F] text-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Hero Section - More compact and balanced */}
+        <div className="bg-[#2D1F8F] text-white py-8">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl">
-              {/* Course Level Badge */}
-              <div className="mb-3">
-                <Badge variant="secondary" className="bg-white/10 text-white hover:bg-white/20">
+              {/* Course Level Badge - Smaller and subtle */}
+              <div className="mb-2">
+                <Badge variant="secondary" className="bg-white/10 text-white hover:bg-white/20 text-xs px-2 py-0.5">
                   {course?.level || 'All Levels'}
                 </Badge>
               </div>
 
-              {/* Course Title */}
-              <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
+              {/* Course Title - Reduced size */}
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-2">
                 {course?.title}
               </h1>
 
-              {/* Short Description */}
-              <p className="text-base text-white/90 mb-4">
+              {/* Short Description - Optimized spacing */}
+              <p className="text-sm text-white/90 mb-3">
                 {course?.description?.slice(0, 150)}...
               </p>
 
-              {/* Course Stats */}
-              <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
+              {/* Course Stats - More compact layout */}
+              <div className="flex flex-wrap items-center gap-3 text-xs mb-4">
                 {/* Rating */}
-                <div className="flex items-center gap-2 text-white/90">
+                <div className="flex items-center gap-1.5 text-white/90">
                   {renderRatingStars()}
                 </div>
 
                 {/* Students */}
                 {course?.students !== undefined && (
-                  <div className="flex items-center gap-2 text-white/90">
-                    <Users className="w-4 h-4 text-white/90" />
+                  <div className="flex items-center gap-1.5 text-white/90">
+                    <Users className="w-3.5 h-3.5" />
                     <span>{course.students.toLocaleString()} students</span>
                   </div>
                 )}
 
                 {/* Duration */}
                 {course?.duration && (
-                  <div className="flex items-center gap-2 text-white/90">
-                    <Clock className="w-4 h-4 text-white/90" />
+                  <div className="flex items-center gap-1.5 text-white/90">
+                    <Clock className="w-3.5 h-3.5" />
                     <span>{course.duration}</span>
                   </div>
                 )}
 
                 {/* Language */}
                 {course?.language && (
-                  <div className="flex items-center gap-2 text-white/90">
-                    <Globe className="w-4 h-4 text-white/90" />
+                  <div className="flex items-center gap-1.5 text-white/90">
+                    <Globe className="w-3.5 h-3.5" />
                     <span>{course.language}</span>
                   </div>
                 )}
               </div>
 
-              {/* Instructor Info */}
-              <div className="flex items-center gap-3">
-                <Avatar className="w-10 h-10">
-                  {isInstructorObject(course?.instructor) && course.instructor.avatar ? (
+              {/* Instructor Info - More compact */}
+              <div className="flex items-center gap-2">
+                <Avatar className="w-8 h-8">
+                  {instructorDetails?.profilePicture ? (
                     <img 
-                      src={course.instructor.avatar}
-                      alt={course.instructor.name}
+                      src={instructorDetails.profilePicture}
+                      alt={instructorDetails.name}
                       className="h-full w-full object-cover rounded-full"
                     />
                   ) : (
-                    <AvatarFallback className="bg-white/10 text-white text-base">
-                      {isInstructorObject(course?.instructor) ? 
-                        course.instructor.name.split(' ').map(n => n[0]).join('') :
+                    <AvatarFallback className="bg-white/10 text-white text-sm">
+                      {instructorDetails?.name ? 
+                        instructorDetails.name.split(' ').map(n => n[0]).join('') :
                         'IN'
                       }
                     </AvatarFallback>
                   )}
                 </Avatar>
                 <div>
-                  <h3 className="text-base font-medium text-white">
+                  <h3 className="text-sm font-medium text-white">
                     {isInstructorObject(course?.instructor) ? 
                       course.instructor.name :
                       course?.instructor || 'Instructor'
                     }
                   </h3>
                   {isInstructorObject(course?.instructor) && course.instructor.title && (
-                    <p className="text-sm text-white/75">{course.instructor.title}</p>
+                    <p className="text-xs text-white/75">{course.instructor.title}</p>
                   )}
                 </div>
               </div>
@@ -605,40 +608,40 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
+        {/* Main Content - Optimized spacing */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
             {/* Main Content Column */}
             <div className="lg:col-span-2">
-              {/* About This Course */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                  <BookOpenCheck className="w-6 h-6 text-[#2D1F8F]" />
+              {/* About This Course - More compact card */}
+              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100 mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <BookOpenCheck className="w-5 h-5 text-[#2D1F8F]" />
                   About This Course
                 </h2>
-                <div className="prose prose-gray max-w-none">
-                  <div className={`relative ${!isDescriptionExpanded && 'max-h-[300px] overflow-hidden'}`}>
-                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap mb-4">
+                <div className="prose prose-sm prose-gray max-w-none">
+                  <div className={`relative ${!isDescriptionExpanded && 'max-h-[200px] overflow-hidden'}`}>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap mb-3 text-sm">
                       {course?.longDescription || course?.description}
                     </p>
                     {!isDescriptionExpanded && (
-                      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
                     )}
                   </div>
                   {(course?.longDescription?.length || course?.description?.length || 0) > 300 && (
                     <button
                       onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                      className="flex items-center gap-2 text-[#2D1F8F] hover:text-[#2D1F8F]/80 font-medium mt-4"
+                      className="flex items-center gap-1 text-[#2D1F8F] hover:text-[#2D1F8F]/80 text-sm font-medium mt-2"
                     >
                       {isDescriptionExpanded ? (
                         <>
                           Show Less
-                          <ChevronUp className="w-4 h-4" />
+                          <ChevronUp className="w-3.5 h-3.5" />
                         </>
                       ) : (
                         <>
                           Read More
-                          <ChevronDown className="w-4 h-4" />
+                          <ChevronDown className="w-3.5 h-3.5" />
                         </>
                       )}
                     </button>
@@ -646,11 +649,36 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
                 </div>
               </div>
 
-              {/* Enrollment Card - Mobile Only */}
-              <div className="lg:hidden mb-8">
-                <div className="bg-white rounded-2xl shadow-lg border p-6">
-                  <div className="space-y-6">
-                    <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-100">
+              {/* What You'll Learn - Compact grid */}
+              <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100 mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-[#2D1F8F]" />
+                  What You'll Learn
+                </h2>
+                {course?.skills && course.skills.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {course.skills.map((skill, index) => (
+                      <div key={index} className="flex items-start gap-2 bg-[#2D1F8F]/5 p-3 rounded-lg">
+                        <CheckCircle className="w-4 h-4 text-[#2D1F8F] flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700 text-sm">{skill}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <div className="w-10 h-10 rounded-full bg-[#2D1F8F]/5 flex items-center justify-center mx-auto mb-3">
+                      <Target className="w-5 h-5 text-[#2D1F8F]" />
+                    </div>
+                    <p className="text-gray-600 text-sm">No skills have been specified for this course yet.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Enrollment Card */}
+              <div className="lg:hidden mb-6">
+                <div className="bg-white rounded-lg shadow-lg border p-5">
+                  <div className="space-y-5">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden bg-gray-100">
                       <img
                         src={course?.image}
                         alt={course?.title}
@@ -660,11 +688,11 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
 
                     {/* Price Section */}
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-[#2D1F8F]">
+                      <span className="text-2xl font-bold text-[#2D1F8F]">
                         {course?.price}
                       </span>
                       {course?.originalPrice && (
-                        <span className="text-lg text-gray-500 line-through">
+                        <span className="text-base text-gray-500 line-through">
                           {course.originalPrice}
                         </span>
                       )}
@@ -672,28 +700,28 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
 
                     {actionButton}
 
-                    <div className="space-y-4">
-                      <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-[#2D1F8F]" />
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-[#2D1F8F]" />
                         This course includes:
                       </h4>
-                      <ul className="space-y-3">
-                        <li className="flex items-center gap-3 text-gray-600">
-                          <Play className="w-5 h-5 text-[#2D1F8F]" />
+                      <ul className="space-y-2">
+                        <li className="flex items-center gap-2 text-sm text-gray-600">
+                          <Play className="w-4 h-4 text-[#2D1F8F]" />
                           {course?.duration || '10 hours'} of video content
                         </li>
                         {course?.language && (
-                          <li className="flex items-center gap-3 text-gray-600">
-                            <Globe className="w-5 h-5 text-[#2D1F8F]" />
+                          <li className="flex items-center gap-2 text-sm text-gray-600">
+                            <Globe className="w-4 h-4 text-[#2D1F8F]" />
                             {course.language}
                           </li>
                         )}
-                        <li className="flex items-center gap-3 text-gray-600">
-                          <Award className="w-5 h-5 text-[#2D1F8F]" />
+                        <li className="flex items-center gap-2 text-sm text-gray-600">
+                          <Award className="w-4 h-4 text-[#2D1F8F]" />
                           Certificate of completion
                         </li>
-                        <li className="flex items-center gap-3 text-gray-600">
-                          <Clock className="w-5 h-5 text-[#2D1F8F]" />
+                        <li className="flex items-center gap-2 text-sm text-gray-600">
+                          <Clock className="w-4 h-4 text-[#2D1F8F]" />
                           Lifetime access
                         </li>
                       </ul>
@@ -702,38 +730,131 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
                 </div>
               </div>
 
-              {/* What You'll Learn */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                  <Target className="w-6 h-6 text-[#2D1F8F]" />
-                  What You'll Learn
-                </h2>
-                {course?.skills && course.skills.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {course.skills.map((skill, index) => (
-                      <div key={index} className="flex items-start gap-3 bg-[#2D1F8F]/5 p-4 rounded-xl">
-                        <CheckCircle className="w-5 h-5 text-[#2D1F8F] flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700">{skill}</span>
+              {/* Course Content - Compact lesson blocks */}
+              <div className="mb-6">
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Course Content</h2>
+                  <p className="text-xs text-gray-500">
+                    {course?.roadmap?.length} lessons • {course?.duration || 'Self-paced'} • All levels
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {course?.roadmap?.map((day, index) => {
+                    const isLocked = !isUserEnrolled;
+                    const isCompleted = course.completedDays?.includes(day.day) || false;
+                    const isPreviousCompleted = index === 0 || 
+                      (course.completedDays?.includes(index) || false);
+
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => {
+                          if (!isLocked && (isPreviousCompleted || isCompleted)) {
+                            const courseIdentifier = course?.courseUrl || courseId;
+                            navigate(`/course/${courseIdentifier}/weeks?day=${day.day}`);
+                          }
+                        }}
+                        className={`relative group cursor-pointer rounded-lg border transition-all duration-200
+                          ${isLocked 
+                            ? 'border-gray-200 hover:border-gray-300 bg-white' 
+                            : isCompleted
+                              ? 'border-[#2D1F8F] bg-white hover:shadow-sm'
+                              : isPreviousCompleted
+                                ? 'border-[#2D1F8F]/30 hover:border-[#2D1F8F] hover:shadow-sm bg-white'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                      >
+                        <div className="flex items-start p-3 gap-3">
+                          {/* Day Number Badge */}
+                          <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
+                            ${isCompleted 
+                              ? 'bg-[#2D1F8F] text-white ring-2 ring-[#2D1F8F]/10' 
+                              : isPreviousCompleted
+                                ? 'bg-[#2D1F8F]/10 text-[#2D1F8F] ring-2 ring-[#2D1F8F]/5'
+                                : 'bg-gray-100 text-gray-500 ring-2 ring-gray-50'
+                            }`}>
+                            {day.day}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-grow min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className={`text-sm font-medium leading-tight ${
+                                isLocked || (!isPreviousCompleted && !isCompleted) 
+                                  ? 'text-gray-500' 
+                                  : 'text-gray-900'
+                              }`}>
+                                {day.topics}
+                              </h3>
+                              {isCompleted && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D1F8F]/10 text-[#2D1F8F]">
+                                  Completed
+                                </span>
+                              )}
+                            </div>
+                            {day.description && (
+                              <p className={`text-xs leading-relaxed mt-1 ${
+                                isLocked || (!isPreviousCompleted && !isCompleted) 
+                                  ? 'text-gray-400' 
+                                  : 'text-gray-600'
+                              }`}>
+                                {day.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Status Icon */}
+                          <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                            transition-colors duration-200
+                            ${isCompleted 
+                              ? 'text-[#2D1F8F] bg-[#2D1F8F]/5' 
+                              : isLocked || !isPreviousCompleted 
+                                ? 'text-gray-400 bg-gray-50'
+                                : 'text-[#2D1F8F] bg-[#2D1F8F]/5 group-hover:bg-[#2D1F8F]/10'
+                            }`}>
+                            {isCompleted ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : isLocked || !isPreviousCompleted ? (
+                              <Lock className="w-3.5 h-3.5" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Completion Status */}
+                        <div className={`px-3 py-2 border-t text-xs font-medium flex items-center gap-1.5
+                          ${isCompleted 
+                            ? 'border-[#2D1F8F]/10 text-[#2D1F8F] bg-[#2D1F8F]/5' 
+                            : isPreviousCompleted
+                              ? 'border-gray-100 text-[#2D1F8F] bg-[#2D1F8F]/5'
+                              : 'border-gray-100 text-gray-500 bg-gray-50/50'
+                          }`}>
+                          {isCompleted ? (
+                            <>
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              <span>Completed this lesson</span>
+                            </>
+                          ) : isPreviousCompleted ? (
+                            <>
+                              <Play className="w-3.5 h-3.5" />
+                              <span>Continue with this lesson</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-3.5 h-3.5" />
+                              <span>Complete previous lessons to unlock</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 px-4">
-                    <div className="w-12 h-12 rounded-full bg-[#2D1F8F]/5 flex items-center justify-center mx-auto mb-4">
-                      <Target className="w-6 h-6 text-[#2D1F8F]" />
-                    </div>
-                    <p className="text-gray-600">No skills have been specified for this course yet.</p>
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Course Content */}
-              <div className="mb-8">
-                {renderCourseContent()}
-              </div>
-
-              {/* Course Reviews Section */}
-              <div className="bg-white rounded-2xl p-8 border shadow-sm">
+              {/* Reviews Section */}
+              <div className="bg-white rounded-lg p-5 border shadow-sm">
                 {course && (
                   <CourseReviews
                     courseId={course._id}
@@ -745,11 +866,11 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
               </div>
             </div>
 
-            {/* Right Column - Enrollment Card Desktop Only */}
+            {/* Right Column - Enrollment Card */}
             <div className="hidden lg:block">
-              <div className="bg-white rounded-2xl shadow-lg border p-6 sticky top-24">
-                <div className="space-y-6">
-                  <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-100">
+              <div className="bg-white rounded-lg shadow-lg border p-5 sticky top-24">
+                <div className="space-y-5">
+                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-gray-100">
                     <img
                       src={course?.image}
                       alt={course?.title}
@@ -759,11 +880,11 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
 
                   {/* Price Section */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-[#2D1F8F]">
+                    <span className="text-2xl font-bold text-[#2D1F8F]">
                       {course?.price}
                     </span>
                     {course?.originalPrice && (
-                      <span className="text-lg text-gray-500 line-through">
+                      <span className="text-base text-gray-500 line-through">
                         {course.originalPrice}
                       </span>
                     )}
@@ -771,28 +892,28 @@ const EnrollForm: React.FC<EnrollFormProps> = ({ courseId }) => {
 
                   {actionButton}
 
-                  <div className="space-y-4">
-                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-[#2D1F8F]" />
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-[#2D1F8F]" />
                       This course includes:
                     </h4>
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-3 text-gray-600">
-                        <Play className="w-5 h-5 text-[#2D1F8F]" />
+                    <ul className="space-y-2">
+                      <li className="flex items-center gap-2 text-sm text-gray-600">
+                        <Play className="w-4 h-4 text-[#2D1F8F]" />
                         {course?.duration || '10 hours'} of video content
                       </li>
                       {course?.language && (
-                        <li className="flex items-center gap-3 text-gray-600">
-                          <Globe className="w-5 h-5 text-[#2D1F8F]" />
+                        <li className="flex items-center gap-2 text-sm text-gray-600">
+                          <Globe className="w-4 h-4 text-[#2D1F8F]" />
                           {course.language}
                         </li>
                       )}
-                      <li className="flex items-center gap-3 text-gray-600">
-                        <Award className="w-5 h-5 text-[#2D1F8F]" />
+                      <li className="flex items-center gap-2 text-sm text-gray-600">
+                        <Award className="w-4 h-4 text-[#2D1F8F]" />
                         Certificate of completion
                       </li>
-                      <li className="flex items-center gap-3 text-gray-600">
-                        <Clock className="w-5 h-5 text-[#2D1F8F]" />
+                      <li className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4 text-[#2D1F8F]" />
                         Lifetime access
                       </li>
                     </ul>

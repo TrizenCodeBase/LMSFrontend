@@ -28,6 +28,7 @@ import InternshipApply from "./pages/InternshipApply";
 import PendingApproval from "./pages/PendingApproval";
 import Assessments from "./pages/student/Assessments";
 import EnrollPage from "./pages/enroll";
+import Leaderboard from "./pages/student/Leaderboard";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -146,6 +147,11 @@ const AppRoutes = () => (
     <Route path="/my-courses" element={
       <ProtectedRoute>
         <Courses />
+      </ProtectedRoute>
+    } />
+    <Route path="/leaderboard" element={
+      <ProtectedRoute>
+        <Leaderboard />
       </ProtectedRoute>
     } />
     <Route path="/explore-courses" element={<ExploreCourses />} />

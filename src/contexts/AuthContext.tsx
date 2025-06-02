@@ -21,7 +21,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
 }
@@ -30,7 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   isAuthenticated: false,
-  login: () => {},
+  login: async () => {},
   logout: () => {},
   updateUser: () => {},
 });
@@ -55,11 +55,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         const response = await axios.get('/api/auth/me');
-        setUser(response.data as User);
+        const userData = response.data as User;
+        setUser(userData);
+
+        // Update localStorage with latest user data
+        localStorage.setItem('userRole', userData.role);
+        localStorage.setItem('userEmail', userData.email);
+
+        // If user is admin and on a non-admin route, redirect to admin dashboard
+        if (userData.role === 'admin' && !location.pathname.startsWith('/admin')) {
+          navigate('/admin/dashboard');
+        }
+        // If user is student and on an admin route, redirect to explore courses
+        else if (userData.role === 'student' && location.pathname.startsWith('/admin')) {
+          navigate('/explore-courses');
+        }
+
         setLoading(false);
       } catch (error) {
         // Token is invalid or expired
         localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userEmail');
         setToken(null);
         setUser(null);
         setLoading(false);
@@ -67,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     verifyToken();
-  }, [token]);
+  }, [token, location.pathname, navigate]);
 
   const login = async (email: string, password: string) => {
     try {

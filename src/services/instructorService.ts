@@ -15,6 +15,7 @@ export interface Instructor {
     totalReviews: number;
   };
   bio: string;
+  profilePicture?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -303,5 +304,31 @@ export const useSubmitTicketReply = () => {
     onError: (error) => {
       console.error('Error submitting reply:', error);
     }
+  });
+};
+
+// Get instructor details by ID
+export const useInstructorDetails = (instructorId: string) => {
+  return useQuery({
+    queryKey: ['instructor', instructorId],
+    queryFn: async (): Promise<Instructor> => {
+      const response = await axios.get(`/api/instructors/${instructorId}`);
+      return response.data;
+    },
+    enabled: !!instructorId,
+  });
+};
+
+// Get instructor details from users collection
+export const useInstructorFromUsers = (instructorId: string | undefined) => {
+  return useQuery({
+    queryKey: ['instructor-user', instructorId],
+    queryFn: async (): Promise<{ name: string; email: string; profilePicture?: string }> => {
+      if (!instructorId) throw new Error('Instructor ID is required');
+      // Use the instructors endpoint instead of users
+      const response = await axios.get(`/api/instructors/profile/${instructorId}`);
+      return response.data;
+    },
+    enabled: !!instructorId
   });
 };
