@@ -24,6 +24,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
+  signup: (data: SignupData) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: () => {},
   updateUser: () => {},
+  signup: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -183,7 +185,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthenticated: !!token, 
       login, 
       logout, 
-      updateUser 
+      updateUser,
+      signup 
     }}>
       {children}
     </AuthContext.Provider>
