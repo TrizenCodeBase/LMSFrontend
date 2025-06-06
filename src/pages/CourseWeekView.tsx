@@ -265,35 +265,31 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
   onNextDay?: () => void;
 }) => {
   const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-green-500";
-    if (score >= 70) return "text-secondary";
+    if (score >= 10) return "text-secondary";
     if (score >= 50) return "text-primary";
     return "text-destructive";
   };
 
   const getBgColor = (score: number) => {
-    if (score >= 90) return "bg-green-500/10";
-    if (score >= 70) return "bg-secondary/10";
+    if (score >= 10) return "bg-secondary/10";
     if (score >= 50) return "bg-primary/10";
     return "bg-destructive/10";
   };
 
   const getScoreEmoji = (score: number) => {
-    if (score >= 90) return "🎯";
-    if (score >= 70) return "✨";
-    if (score >= 50) return "💪";
-    return "📚";
+    if (score >= 10) return "✨";
+    if (score >= 50) return "👍";
+    return "💪";
   };
 
-  const getScoreMessage = (score: number, attemptNumber: number) => {
-    if (score >= 90) return "Excellent!";
-    if (score >= 70) return "Well Done!";
-    if (score >= 50) return attemptNumber < 2 ? "Keep Going!" : "Review Content";
-    return attemptNumber < 2 ? "Try Again" : "Review Content";
+  const getScoreMessage = (score: number) => {
+    if (score >= 10) return "Well Done!";
+    if (score >= 50) return "Keep Going!";
+    return "Try Again!";
   };
 
   const bestScore = Math.max(...attempts.map(a => a.score));
-  const hasPassingScore = attempts.some(attempt => attempt.score >= 70);
+  const hasPassingScore = attempts.some(attempt => attempt.score >= 10);
   const isWithinAttemptLimit = attempts.length < 2;
 
   return (
@@ -323,7 +319,7 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
                         {attempt.score}%
             </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {getScoreMessage(attempt.score, attempt.attemptNumber)}
+                        {getScoreMessage(attempt.score)}
                       </span>
                     </div>
                   </div>
@@ -392,7 +388,11 @@ const QuizResultsDisplay = ({ attempts, onNextDay }: {
           <p className="text-sm text-green-800 text-center">
             {bestScore === 100 
               ? "🎉 Congratulations! You've achieved a perfect score of 100%!"
-              : `Congratulations! You've passed this quiz with a score of ${bestScore}%. You can still retake it to improve your score.`
+              : bestScore >= 70
+              ? `Congratulations! You've passed this quiz with a score of ${bestScore}%. You can still retake it to improve your score.`
+              : bestScore < 70
+              ? `opps! You've failed  this quiz with a score of ${bestScore}%. You can still retake it to improve your score.`
+              : `You've completed this quiz but haven't passed yet. You need 70% to pass.`
             }
           </p>
         </div>
@@ -791,7 +791,7 @@ const CourseWeekView = () => {
           completedAt: new Date(),
           totalQuestions: dayData?.mcqs?.length || 0,
           attemptNumber,
-          isCompleted: score >= 70
+          isCompleted: score >= 10
         };
 
         setQuizResults(prev => ({
@@ -962,7 +962,7 @@ const CourseWeekView = () => {
     const dayData = course?.roadmap.find(d => d.day === day);
     const hasQuiz = dayData?.mcqs && dayData.mcqs.length > 0;
     
-    if (!hasQuiz || (hasQuiz && quizResults[day]?.some(attempt => attempt.score >= 70))) {
+    if (!hasQuiz || (hasQuiz && quizResults[day]?.some(attempt => attempt.score >= 10))) {
       handleDayComplete(day);
     }
   };
@@ -1270,6 +1270,12 @@ const CourseWeekView = () => {
           localStorage.setItem(`watchedVideos-${courseId}`, JSON.stringify(newWatchedVideos));
         }
 
+        // Mark quiz as completed if not already in quizCompleted
+        if (!quizCompleted.includes(dayNumber)) {
+          const newQuizCompleted = [...quizCompleted, dayNumber];
+          setQuizCompleted(newQuizCompleted);
+        }
+
         // Mark day as complete
         const newCompletedDays = [...completedDays, dayNumber].sort((a, b) => a - b);
         
@@ -1476,7 +1482,7 @@ const CourseWeekView = () => {
                       "flex items-center gap-2 w-full p-2 rounded-md text-sm transition-colors",
                       selectedDay === day.day && showQuizView
                         ? "bg-primary/10 text-primary"
-                        : quizResults[day.day]?.some(attempt => attempt.score >= 70)
+                        : quizResults[day.day]?.some(attempt => attempt.score >= 10)
                         ? "text-emerald-600 hover:bg-emerald-50"
                         : "hover:bg-muted",
                       !isMCQsEnabled(day.day) && "opacity-50 cursor-not-allowed"
@@ -1484,10 +1490,10 @@ const CourseWeekView = () => {
                   >
                     <FileText className={cn(
                       "h-4 w-4",
-                      quizResults[day.day]?.some(attempt => attempt.score >= 70) && "text-emerald-600"
+                      quizResults[day.day]?.some(attempt => attempt.score >= 10) && "text-emerald-600"
                     )} />
                     <span>Quiz {quizNumbers[day.day] || ''} ({day.mcqs.length} questions)</span>
-                    {quizResults[day.day]?.some(attempt => attempt.score >= 70) && (
+                    {quizResults[day.day]?.some(attempt => attempt.score >= 10) && (
                       <CheckCircle className="h-3.5 w-3.5 ml-auto text-emerald-600" />
                     )}
                     {!isMCQsEnabled(day.day) && (

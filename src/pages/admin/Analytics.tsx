@@ -15,7 +15,11 @@ import {
   Activity, 
   Clock, 
   RefreshCw, 
-  TrendingUp 
+  TrendingUp,
+  ChartPie,
+  LineChart as LineChartIcon,
+  BarChart2,
+  UserCheck
 } from "lucide-react";
 import {
   ChartContainer,
@@ -176,11 +180,27 @@ const Analytics = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 className="text-3xl font-bold tracking-tight">Real-time Analytics</h2>
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-muted-foreground">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
+        <div className="container mx-auto py-10 space-y-8">
+          {/* Header Section */}
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-8 shadow-lg border border-purple-100/50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+              <div className="flex items-center gap-6">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                  <BarChart3 className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-br from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                    Analytics Dashboard
+                  </h1>
+                  <p className="text-gray-600 mt-1 flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-purple-500" />
+                    Real-time platform insights and metrics
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-gray-600 bg-white/80 px-3 py-2 rounded-lg shadow-sm border border-purple-100">
               Last updated: {lastUpdated.toLocaleTimeString()}
             </div>
             <Button 
@@ -188,30 +208,31 @@ const Analytics = () => {
               size="sm"
               onClick={refreshData}
               disabled={isRefreshing}
-              className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-white hover:bg-purple-50 border-purple-200"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 text-purple-600 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
+              </div>
           </div>
         </div>
         
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpiData.map((kpi, index) => (
-            <Card key={index}>
+              <Card key={index} className="border-purple-100 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-all duration-200">
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">{kpi.title}</p>
-                    <h3 className="text-2xl font-bold mt-1">{kpi.value}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{kpi.description}</p>
+                      <p className="text-sm font-medium text-gray-600">{kpi.title}</p>
+                      <h3 className="text-2xl font-bold mt-1 text-gray-900">{kpi.value}</h3>
+                      <p className="text-xs text-gray-500 mt-1">{kpi.description}</p>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className={`p-2 rounded-full ${kpi.trend >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                      <div className={`p-2 rounded-xl ${kpi.trend >= 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
                       <kpi.icon className={`h-5 w-5 ${kpi.trend >= 0 ? 'text-green-600' : 'text-red-600'}`} />
                     </div>
-                    <span className={`text-sm flex items-center mt-2 ${kpi.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className={`text-sm flex items-center mt-2 font-medium ${kpi.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {kpi.trend >= 0 ? 
                         <ArrowUpRight className="h-4 w-4 mr-1" /> : 
                         <ArrowDownRight className="h-4 w-4 mr-1" />
@@ -225,12 +246,35 @@ const Analytics = () => {
           ))}
         </div>
         
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-2 md:grid-cols-4 h-auto gap-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="enrollment">Enrollments</TabsTrigger>
-            <TabsTrigger value="completion">Completion</TabsTrigger>
-            <TabsTrigger value="usage" className="relative">
+          {/* Analytics Tabs */}
+          <Tabs defaultValue="overview" className="space-y-8">
+            <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-2 md:grid-cols-4 h-auto gap-4 bg-transparent p-0">
+              <TabsTrigger 
+                value="overview"
+                className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 data-[state=active]:border-purple-200 border shadow-sm bg-white"
+              >
+                <BarChart2 className="h-4 w-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger 
+                value="enrollment"
+                className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 data-[state=active]:border-purple-200 border shadow-sm bg-white"
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Enrollments
+              </TabsTrigger>
+              <TabsTrigger 
+                value="completion"
+                className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 data-[state=active]:border-purple-200 border shadow-sm bg-white"
+              >
+                <ChartPie className="h-4 w-4 mr-2" />
+                Completion
+              </TabsTrigger>
+              <TabsTrigger 
+                value="usage" 
+                className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 data-[state=active]:border-purple-200 border shadow-sm bg-white relative"
+              >
+                <LineChartIcon className="h-4 w-4 mr-2" />
               User Activity
               <span className="absolute top-0 right-1 h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
             </TabsTrigger>
@@ -240,36 +284,44 @@ const Analytics = () => {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Real-time Users Card */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-lg font-medium">Real-time User Activity</CardTitle>
+                <Card className="border-purple-100 bg-white/90 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-purple-100/50">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center border border-purple-200">
+                        <Users className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-800">Real-time User Activity</CardTitle>
+                        <CardDescription>Live monitoring of active users</CardDescription>
+                      </div>
+                    </div>
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex gap-1 items-center">
                     <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
                     Live
                   </Badge>
                 </CardHeader>
-                <CardContent>
+                  <CardContent className="pt-6">
                   <div className="h-[300px]">
                     <ChartContainer config={{
-                      users: { theme: { light: "#0ea5e9", dark: "#38bdf8" } }
+                        users: { theme: { light: "#8b5cf6", dark: "#a78bfa" } }
                     }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={realtimeUserActivityData}>
                           <defs>
                             <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.1}/>
+                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="time" />
-                          <YAxis />
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+                            <XAxis dataKey="time" stroke="#6b7280" />
+                            <YAxis stroke="#6b7280" />
                           <ChartTooltip content={<ChartTooltipContent />} />
                           <Legend />
                           <Area 
                             type="monotone" 
                             dataKey="users" 
-                            stroke="#0ea5e9" 
+                              stroke="#8b5cf6" 
                             fillOpacity={1} 
                             fill="url(#colorUsers)" 
                             name="Active Users"
@@ -282,25 +334,33 @@ const Analytics = () => {
               </Card>
               
               {/* Enrollment Card */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Monthly Enrollments</CardTitle>
+                <Card className="border-purple-100 bg-white/90 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-purple-100/50">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center border border-purple-200">
+                        <BookOpen className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-800">Monthly Enrollments</CardTitle>
+                        <CardDescription>Course enrollment trends</CardDescription>
+                      </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
+                  <CardContent className="pt-6">
                   <div className="h-[300px]">
                     <ChartContainer config={{
                       value: { theme: { light: "#8b5cf6", dark: "#a78bfa" } }
                     }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={realtimeEnrollmentData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+                            <XAxis dataKey="name" stroke="#6b7280" />
+                            <YAxis stroke="#6b7280" />
                           <ChartTooltip content={<ChartTooltipContent />} />
                           <Legend />
                           <Bar 
                             dataKey="value" 
-                            fill="var(--color-value)" 
+                              fill="#8b5cf6" 
                             name="Enrollments"
                             radius={[4, 4, 0, 0]}
                           />
@@ -312,23 +372,38 @@ const Analytics = () => {
               </Card>
             </div>
             
+              {/* Course Completion and Platform Usage */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Course Completion Card */}
-              <Card className="col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Top Courses by Completion Rate</CardTitle>
+                <Card className="col-span-2 border-purple-100 bg-white/90 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-purple-100/50">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center border border-purple-200">
+                        <Activity className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-800">Course Completion Rates</CardTitle>
+                        <CardDescription>Progress tracking across courses</CardDescription>
+                      </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                  <CardContent className="pt-6">
+                    <div className="space-y-6">
                     {realtimeCourseCompletionData.map((course, index) => {
                       const completionRate = (course.completed / (course.completed + course.inProgress + course.notStarted)) * 100;
                       return (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between">
-                            <span className="font-medium">{course.name}</span>
-                            <span>{completionRate.toFixed(0)}%</span>
+                          <div key={index} className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <span className="font-medium text-gray-900">{course.name}</span>
+                                <div className="text-sm text-gray-500 mt-0.5">
+                                  {course.completed} completed, {course.inProgress} in progress
+                                </div>
+                              </div>
+                              <span className="text-lg font-semibold text-purple-600">{completionRate.toFixed(0)}%</span>
                           </div>
-                          <Progress value={completionRate} className="h-2" />
+                            <Progress value={completionRate} className="h-2 bg-purple-100">
+                              <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" />
+                            </Progress>
                         </div>
                       );
                     })}
@@ -336,12 +411,19 @@ const Analytics = () => {
                 </CardContent>
               </Card>
               
-              {/* Platform Usage Card */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Platform Usage</CardTitle>
+                <Card className="border-purple-100 bg-white/90 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-purple-100/50">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center border border-purple-200">
+                        <ChartPie className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-gray-800">Platform Usage</CardTitle>
+                        <CardDescription>Device distribution</CardDescription>
+                      </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
+                  <CardContent className="pt-6">
                   <div className="h-[220px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -574,6 +656,7 @@ const Analytics = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </AdminLayout>
   );

@@ -238,52 +238,47 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
   return (
     <div className={cn(
       "bg-gradient-to-br from-background to-background/95 flex flex-col",
-      isFullscreen ? "fixed inset-0 z-50 min-h-screen" : "h-[calc(100vh-16rem)]"
+      isFullscreen ? "fixed inset-0 z-50 min-h-screen" : "min-h-[calc(100vh-4rem)]"
     )}>
       {/* Quiz Header */}
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/50"
+        className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/50 sticky top-0 z-10"
       >
-        <div className="container mx-auto px-2 sm:px-4 py-3">
-          <div className="flex flex-col gap-2">
+        <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-3">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <motion.h2 
-                  className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent"
-                  initial={{ scale: 0.9 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <h2 className="text-lg sm:text-xl font-semibold text-black">
                   Quiz {quizNumber || dayNumber}
-                </motion.h2>
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs sm:text-sm whitespace-nowrap px-2 py-1">
                   Question {currentQuestionIndex + 1} of {questions.length}
                 </Badge>
-                <Badge variant="outline" className="hidden sm:flex gap-1 items-center">
+                  <Badge variant="outline" className="flex gap-1.5 items-center text-xs sm:text-sm whitespace-nowrap px-2 py-1">
                   <Timer className="w-3 h-3" />
                   {formatTime(timeSpent)}
                 </Badge>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleFullscreen}
-                  className="hover:bg-primary/10 transition-colors"
+                className="hover:bg-green-600/10 transition-colors h-9 w-9 sm:h-10 sm:w-10 shrink-0"
               >
                 {isFullscreen ? (
-                  <Minimize2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Minimize2 className="h-4 w-4" />
                 ) : (
-                  <Maximize2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Maximize2 className="h-4 w-4" />
                 )}
               </Button>
             </div>
-            </div>
             <Progress 
               value={(currentQuestionIndex + 1) / questions.length * 100} 
-              className="h-1.5 bg-primary/10"
+              className="h-1.5 bg-green-600/10"
             />
           </div>
         </div>
@@ -300,16 +295,15 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
             transition={{ duration: 0.2 }}
             className="flex-1 overflow-y-auto"
           >
-            <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
+            <div className="max-w-4xl mx-auto px-3 py-4 sm:p-6 md:p-8">
             {/* Question */}
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <motion.div 
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="space-y-4"
                 >
-                  <h3 className="text-xl sm:text-2xl font-semibold leading-tight">
+                  <h3 className="text-base leading-relaxed sm:text-2xl font-semibold text-black mb-4">
                 {currentQuestion.question}
                   </h3>
                 </motion.div>
@@ -317,7 +311,7 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
           <RadioGroup 
                 value={selectedOptionIndices[currentQuestionIndex]?.toString()}
             onValueChange={(value) => handleOptionSelect(parseInt(value))}
-                  className="space-y-4"
+                  className="space-y-3 sm:space-y-4"
           >
                 {(currentQuestion.options || []).map((option, index) => (
                     <motion.div
@@ -333,17 +327,17 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
                       >
                         <div 
                 className={cn(
-                            "group relative flex items-center space-x-3 rounded-xl border-2 p-4 sm:p-5 transition-all duration-300",
+                            "group relative flex items-center space-x-3 rounded-xl border-2 p-4 transition-all duration-300",
                       selectedOptionIndices[currentQuestionIndex] === index
-                              ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
-                              : "hover:border-primary/50 hover:bg-primary/5 hover:shadow-md"
+                              ? "border-green-600 bg-green-600/5 shadow-lg shadow-green-600/10"
+                              : "hover:border-green-600/50 hover:bg-green-600/5 hover:shadow-md"
                           )}
                         >
                           <div className={cn(
                             "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
                             selectedOptionIndices[currentQuestionIndex] === index
-                              ? "border-primary bg-primary text-white scale-110"
-                              : "border-muted-foreground/30 group-hover:border-primary/50"
+                              ? "border-green-600 bg-green-600 text-white scale-110"
+                              : "border-muted-foreground/30 group-hover:border-green-600/50"
                           )}>
                             {selectedOptionIndices[currentQuestionIndex] === index && (
                               <motion.div
@@ -356,7 +350,7 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
                             )}
                           </div>
                           <RadioGroupItem value={index.toString()} id={`option-${index}`} className="sr-only" />
-                          <span className="flex-1 text-base sm:text-lg">
+                          <span className="flex-1 text-sm leading-relaxed sm:text-base md:text-lg text-black">
                             {option.text}
                           </span>
                         </div>
@@ -375,7 +369,7 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
           animate={{ x: 0, opacity: 1 }}
           className="w-full lg:w-[300px] border-t lg:border-t-0 lg:border-l bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 overflow-y-auto p-4 sm:p-6"
         >
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Progress Stats */}
             <div className="grid grid-cols-3 gap-3">
               <motion.div 
@@ -384,14 +378,14 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
               >
                 <div className="flex flex-col items-center">
                   <motion.div 
-                    className="text-2xl font-bold text-green-500"
+                    className="text-lg sm:text-2xl font-bold text-green-500"
                     initial={{ scale: 0.5 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   >
                   {selectedOptionIndices.filter(i => i !== -1).length}
                   </motion.div>
-                  <div className="text-xs text-muted-foreground">Answered</div>
+                  <div className="text-xs text-black">Answered</div>
                 </div>
               </motion.div>
               <motion.div 
@@ -400,14 +394,14 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
               >
                 <div className="flex flex-col items-center">
                   <motion.div 
-                    className="text-2xl font-bold text-red-500"
+                    className="text-lg sm:text-2xl font-bold text-red-500"
                     initial={{ scale: 0.5 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   >
                   {selectedOptionIndices.filter(i => i === -1).length}
                   </motion.div>
-                  <div className="text-xs text-muted-foreground">Pending</div>
+                  <div className="text-xs text-black">Pending</div>
                 </div>
               </motion.div>
               <motion.div 
@@ -416,14 +410,14 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
               >
                 <div className="flex flex-col items-center">
                   <motion.div 
-                    className="text-2xl font-bold text-blue-500"
+                    className="text-lg sm:text-2xl font-bold text-blue-500"
                     initial={{ scale: 0.5 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   >
                     {Math.round((selectedOptionIndices.filter(i => i !== -1).length / questions.length) * 100)}%
                   </motion.div>
-                  <div className="text-xs text-muted-foreground">Complete</div>
+                  <div className="text-xs text-black">Complete</div>
                 </div>
               </motion.div>
             </div>
@@ -435,7 +429,7 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <h4 className="font-medium mb-3 text-sm">Questions</h4>
+              <h4 className="font-medium mb-3 text-sm text-black">Questions</h4>
               <div className="grid grid-cols-5 gap-2">
                 {questions.map((_, index) => {
                   const isAnswered = selectedOptionIndices[index] !== -1;
@@ -449,9 +443,9 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
                       className={cn(
                         "relative h-10 w-10 rounded-lg font-medium text-sm transition-all duration-200",
                         isAnswered 
-                          ? "bg-primary text-white shadow-md" 
+                          ? "bg-green-600 text-white shadow-md" 
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200",
-                        isCurrent && "ring-2 ring-primary ring-offset-2"
+                        isCurrent && "ring-2 ring-green-600 ring-offset-2"
                       )}
                     >
                       {index + 1}
@@ -459,7 +453,7 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"
+                          className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full"
                         />
                       )}
                     </motion.button>
@@ -468,23 +462,23 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
               </div>
             </motion.div>
 
-            {/* Keyboard Shortcuts */}
+            {/* Keyboard Shortcuts - Hidden on Mobile */}
             <motion.div 
-              className="bg-white/50 backdrop-blur-sm rounded-lg p-4 text-sm space-y-2"
+              className="hidden sm:block bg-white/50 backdrop-blur-sm rounded-lg p-4 text-sm space-y-2"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <h4 className="font-medium mb-2">Keyboard Shortcuts</h4>
-              <div className="flex items-center justify-between text-muted-foreground">
+              <h4 className="font-medium mb-2 text-black">Keyboard Shortcuts</h4>
+              <div className="flex items-center justify-between text-black">
                 <span>←/→</span>
                 <span>Navigate questions</span>
               </div>
-              <div className="flex items-center justify-between text-muted-foreground">
+              <div className="flex items-center justify-between text-black">
                 <span>1-4</span>
                 <span>Select answer</span>
               </div>
-              <div className="flex items-center justify-between text-muted-foreground">
+              <div className="flex items-center justify-between text-black">
                 <span>F</span>
                 <span>Toggle fullscreen</span>
             </div>
@@ -497,13 +491,13 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/50 p-4 sm:p-6"
+        className="border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/50 p-4 sticky bottom-0"
       >
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between gap-3">
           <Button
             variant="outline"
             onClick={handleClearResponse}
-            className="sm:w-[140px] h-11 text-sm hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30 group"
+            className="h-12 sm:h-11 text-sm hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30 group"
           >
             <Trash2 className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
             Clear Response
@@ -513,7 +507,7 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
               <Button 
                 variant="default"
                 onClick={() => navigateToQuestion(currentQuestionIndex + 1)}
-                className="sm:w-[140px] h-11 text-sm bg-primary hover:bg-primary/90 group"
+                className="flex-1 sm:flex-none h-12 sm:h-11 text-sm bg-green-600 hover:bg-green-600/90 group"
               >
                 Next Question
                 <ChevronRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
@@ -524,7 +518,7 @@ const MCQQuiz: React.FC<MCQQuizProps> = ({ questions, onComplete, onCancel, dayN
               onClick={handleSubmit}
               disabled={!allQuestionsAnswered}
               className={cn(
-                "sm:w-[140px] h-11 text-sm transition-all duration-200 group",
+                "flex-1 sm:flex-none h-12 sm:h-11 text-sm transition-all duration-200 group",
                 allQuestionsAnswered 
                   ? "bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg"
                   : "bg-gray-400 cursor-not-allowed"

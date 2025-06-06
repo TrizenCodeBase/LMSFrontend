@@ -99,7 +99,8 @@ interface Instructor {
 }
 
 interface Course {
-  id: string;
+  _id: string;
+  id?: string;
   title: string;
   description: string;
   category: string;
@@ -108,6 +109,11 @@ interface Course {
   students: number;
   rating: number;
   createdAt: string;
+  image?: string;
+  instructor?: string;
+  courseUrl?: string;
+  duration?: string;
+  status?: 'active' | 'draft' | 'archived';
 }
 
 // Mock stats and reviews for demonstration
@@ -258,13 +264,9 @@ const InstructorManagement = () => {
     setIsLoadingCourses(true);
     
     try {
-      // In a real implementation, fetch from an API endpoint
-      // const response = await axios.get(`/api/admin/instructors/${instructor._id}/courses`);
-      // setInstructorCourses(response.data);
-      
       // Mock data for now
       const mockCourses: Course[] = Array.from({ length: 3 }, (_, i) => ({
-        id: `course-${i + 1}-${instructor._id.substring(0, 5)}`,
+        _id: `course-${i + 1}-${instructor._id.substring(0, 5)}`,
         title: [`Web Development Masterclass`, `Data Science Fundamentals`, `Mobile App Development`][i % 3],
         description: `A comprehensive course on ${['web development', 'data science', 'mobile app development'][i % 3]}`,
         category: [`Web Development`, `Data Science`, `Mobile Development`][i % 3],
@@ -272,7 +274,8 @@ const InstructorManagement = () => {
         price: [99.99, 149.99, 199.99][i % 3],
         students: Math.floor(Math.random() * 200) + 50,
         rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
-        createdAt: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString()
+        createdAt: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString(),
+        instructor: instructor._id
       }));
       
       setInstructorCourses(mockCourses);
@@ -421,27 +424,29 @@ const InstructorManagement = () => {
   return (
     <AdminLayout>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="p-6 space-y-6 flex-shrink-0 border-b bg-gradient-to-b from-background to-muted/20">
+        <div className="p-6 space-y-6 flex-shrink-0">
           <div className="flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            {/* Header Section */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#34226C] to-[#5f3dc4] p-6 shadow-lg">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 relative z-10">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Instructor Management</h1>
-                <p className="text-sm text-muted-foreground mt-1">
+                  <h1 className="text-2xl font-semibold tracking-tight text-white">Instructor Management</h1>
+                  <p className="text-purple-100/80 text-sm mt-1">
                   Manage and monitor all instructors in the platform
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 sm:flex-none">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5f3dc4]" />
                   <Input
                     placeholder="Search instructors..."
-                    className="pl-9 w-full sm:w-[260px] bg-white/50 backdrop-blur-sm"
+                      className="pl-9 w-full sm:w-[260px] bg-white/90 backdrop-blur-sm border-0 focus-visible:ring-2 focus-visible:ring-white/20"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[160px] bg-white/50 backdrop-blur-sm">
+                    <SelectTrigger className="w-full sm:w-[160px] bg-white/90 backdrop-blur-sm border-0 focus:ring-2 focus:ring-white/20">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -452,55 +457,57 @@ const InstructorManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
+              </div>
+              <div className="absolute inset-0 bg-[url('/infinity-pattern.svg')] opacity-10" />
             </div>
 
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-0 shadow-md">
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
                   <CardTitle className="text-sm font-medium">Total Instructors</CardTitle>
-                  <Users className="h-4 w-4 text-violet-500" />
+                  <Users className="h-4 w-4 text-[#5f3dc4]" />
                 </CardHeader>
                 <CardContent className="py-3 px-4">
-                  <div className="text-2xl font-bold text-violet-600">{instructors.length}</div>
-                  <p className="text-sm text-violet-600/80">
+                  <div className="text-2xl font-bold text-[#5f3dc4]">{instructors.length}</div>
+                  <p className="text-sm text-[#5f3dc4]/80">
                     {instructors.filter(i => i.status === 'approved').length} active
                   </p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-0 shadow-md">
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
                   <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-amber-500" />
+                  <Clock className="h-4 w-4 text-[#5f3dc4]" />
                 </CardHeader>
                 <CardContent className="py-3 px-4">
-                  <div className="text-2xl font-bold text-amber-600">
+                  <div className="text-2xl font-bold text-[#5f3dc4]">
                     {instructors.filter(i => i.status === 'pending').length}
                   </div>
-                  <p className="text-sm text-amber-600/80">Awaiting review</p>
+                  <p className="text-sm text-[#5f3dc4]/80">Awaiting review</p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-0 shadow-md">
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
                   <CardTitle className="text-sm font-medium">Avg. Experience</CardTitle>
-                  <Award className="h-4 w-4 text-emerald-500" />
+                  <Award className="h-4 w-4 text-[#5f3dc4]" />
                 </CardHeader>
                 <CardContent className="py-3 px-4">
-                  <div className="text-2xl font-bold text-emerald-600">
+                  <div className="text-2xl font-bold text-[#5f3dc4]">
                     {Math.round(instructors.reduce((acc, curr) => acc + curr.instructorProfile.experience, 0) / instructors.length || 0)}y
                   </div>
-                  <p className="text-sm text-emerald-600/80">Years teaching</p>
+                  <p className="text-sm text-[#5f3dc4]/80">Years teaching</p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-0 shadow-md">
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
                   <CardTitle className="text-sm font-medium">Top Specialty</CardTitle>
-                  <BookOpen className="h-4 w-4 text-blue-500" />
+                  <BookOpen className="h-4 w-4 text-[#5f3dc4]" />
                 </CardHeader>
                 <CardContent className="py-3 px-4">
-                  <div className="text-2xl font-bold text-blue-600 truncate">
+                  <div className="text-2xl font-bold text-[#5f3dc4] truncate">
                     {(() => {
                       const specialties = instructors.map(i => i.instructorProfile.specialty);
                       const counts = specialties.reduce((acc, curr) => {
@@ -511,19 +518,19 @@ const InstructorManagement = () => {
                       return Object.keys(counts).find(key => counts[key] === max) || 'N/A';
                     })()}
                   </div>
-                  <p className="text-sm text-blue-600/80">Most common</p>
+                  <p className="text-sm text-[#5f3dc4]/80">Most common</p>
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 p-6 bg-muted/5">
-          <div className="h-full rounded-xl border bg-white shadow-sm overflow-hidden">
+        <div className="flex-1 min-h-0 p-6 bg-[#f9f9fb]">
+          <div className="h-full rounded-xl border border-[#e6e0f7] bg-white shadow-sm overflow-hidden">
             <div className="overflow-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableRow className="bg-[#e6e0f7]/10 hover:bg-[#e6e0f7]/10">
                     <TableHead className="w-[50px]">S.No</TableHead>
                     <TableHead className="w-[100px]">ID</TableHead>
                     <TableHead>Name</TableHead>
@@ -540,7 +547,12 @@ const InstructorManagement = () => {
                     <TableRow>
                       <TableCell colSpan={9} className="h-[200px]">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <div className="relative">
+                            <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] opacity-25"></div>
+                            <div className="h-12 w-12 rounded-full border-4 border-[#e6e0f7] border-r-[#5f3dc4] animate-spin"></div>
+                            <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] border-l-[#5f3dc4] animate-spin-reverse [animation-delay:-0.2s]"></div>
+                            <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] border-t-[#5f3dc4] animate-spin [animation-delay:-0.4s]"></div>
+                          </div>
                           <p className="text-sm text-muted-foreground">Loading instructors...</p>
                         </div>
                       </TableCell>
@@ -549,14 +561,16 @@ const InstructorManagement = () => {
                     <TableRow>
                       <TableCell colSpan={9} className="h-[200px]">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <Users className="h-8 w-8 text-muted-foreground" />
+                          <div className="w-16 h-16 rounded-lg bg-[#e6e0f7] flex items-center justify-center">
+                            <Users className="h-8 w-8 text-[#5f3dc4]" />
+                          </div>
                           <p className="text-sm text-muted-foreground">No instructors found</p>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredInstructors.map((instructor, index) => (
-                      <TableRow key={instructor._id} className="hover:bg-muted/30 group">
+                      <TableRow key={instructor._id} className="hover:bg-[#e6e0f7]/10 group">
                         <TableCell className="py-3 font-medium">{index + 1}</TableCell>
                         <TableCell className="py-3">
                           <code className="px-2 py-1 rounded-md bg-muted font-mono text-xs">

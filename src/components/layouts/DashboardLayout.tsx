@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationBell } from '@/components/NotificationBell';
 
@@ -34,12 +34,20 @@ const UserMenu = ({ user, onLogout }: { user: any; onLogout: () => void }) => {
       ?.join('')
       ?.toUpperCase() || 'U';
   };
+
+  const getDefaultAvatarUrl = (name: string) => {
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+  };
   
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border-2 border-black">
+            <AvatarImage 
+              src={user?.avatar || getDefaultAvatarUrl(user?.name || 'user')} 
+              alt={user?.name || 'User'} 
+            />
             <AvatarFallback>
               {user?.name ? getInitials(user.name) : 'U'}
             </AvatarFallback>

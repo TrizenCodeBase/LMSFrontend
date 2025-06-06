@@ -39,6 +39,7 @@ import EnrollmentRequests from "./pages/admin/EnrollmentRequests";
 import ContactRequests from "./pages/admin/ContactRequests";
 import InstructorManagement from "./pages/admin/InstructorManagement";
 import InstructorApprovals from "./pages/admin/InstructorApprovals";
+import AdminLeaderboard from "./pages/admin/Leaderboard";
 
 // Layouts
 import DashboardLayout from "./components/layouts/DashboardLayout";
@@ -228,6 +229,11 @@ const AppRoutes = () => (
     <Route path="/admin/analytics" element={
       <AdminRoute>
         <Analytics />
+      </AdminRoute>
+    } />
+    <Route path="/admin/leaderboard" element={
+      <AdminRoute>
+        <AdminLeaderboard />
       </AdminRoute>
     } />
     <Route path="/admin/enrollment-requests" element={

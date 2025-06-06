@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from '@/lib/axios';
 
@@ -16,18 +16,31 @@ export interface LeaderboardMetrics {
   };
 }
 
-export const useLeaderboard = () => {
+export const useLeaderboard = (courseUrl?: string) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery<{ rankings: LeaderboardMetrics[]; currentUserRank: number }>({
-    queryKey: ['leaderboard'],
+    queryKey: ['leaderboard', courseUrl],
     queryFn: async () => {
       try {
-        const response = await axios.get<LeaderboardMetrics[]>('/api/leaderboard/students');
+        console.log('🔄 Fetching leaderboard data...', { courseUrl });
+        const url = courseUrl 
+          ? `/api/leaderboard/students?courseUrl=${courseUrl}`
+          : '/api/leaderboard/students';
+        
+        const response = await axios.get<LeaderboardMetrics[]>(url);
         const rankedData = response.data;
         
-        // Log the data to help with debugging
-        console.log('Leaderboard data:', rankedData);
+        console.log('✅ Leaderboard data fetched:', {
+          timestamp: new Date().toISOString(),
+          courseUrl,
+          totalStudents: rankedData.length,
+          topScores: rankedData.slice(0, 3).map(s => ({
+            name: s.name,
+            totalPoints: s.metrics.totalPoints
+          }))
+        });
         
         const currentUserRank = rankedData.find(entry => 
           entry.userId === user?.id
@@ -38,13 +51,31 @@ export const useLeaderboard = () => {
           currentUserRank
         };
       } catch (error) {
-        console.error('Error fetching leaderboard data:', error);
+        console.error('❌ Error fetching leaderboard data:', error);
         return {
           rankings: [],
           currentUserRank: 0
         };
       }
     },
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    refetchInterval: 30 * 1000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnReconnect: true, // Refetch when internet reconnects
+    staleTime: 30 * 1000, // Consider data stale after 30 seconds
+    onSuccess: (data) => {
+      console.log('🎯 Leaderboard data updated:', {
+        timestamp: new Date().toISOString(),
+        courseUrl,
+        totalStudents: data.rankings.length,
+        currentUserRank: data.currentUserRank
+      });
+    }
   });
+};
+
+// Function to manually refresh leaderboard
+export const refreshLeaderboard = async (courseUrl?: string) => {
+  const queryClient = useQueryClient();
+  await queryClient.invalidateQueries(['leaderboard', courseUrl]);
 }; 

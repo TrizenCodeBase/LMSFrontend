@@ -104,6 +104,7 @@ const AdminDashboard = () => {
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
   const [showActivityPanel, setShowActivityPanel] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // Fetch courses from MongoDB courses collection
   useEffect(() => {
@@ -257,6 +258,13 @@ const AdminDashboard = () => {
   const currentProgress = courseProgress[0];
   const currentStudents = currentProgress?.students || [];
 
+  // Sort students based on progress
+  const sortedStudents = [...currentStudents].sort((a, b) => {
+    const aProgress = Number(a.daysCompletedPerDuration.split('/')[0]) / Number(a.daysCompletedPerDuration.split('/')[1]) * 100;
+    const bProgress = Number(b.daysCompletedPerDuration.split('/')[0]) / Number(b.daysCompletedPerDuration.split('/')[1]) * 100;
+    return sortOrder === 'desc' ? bProgress - aProgress : aProgress - bProgress;
+  });
+
   // Calculate metrics for current course
   const calculateMetrics = () => {
     const currentStudents = courseProgress[0]?.students || [];
@@ -373,55 +381,104 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <motion.div 
-        className="space-y-6 px-6 py-8"
+        className="space-y-8 px-6 py-8 relative"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Header Section */}
-        <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
+        {/* Hero Banner with Infinity Symbol */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-[#34226C]/5 mix-blend-multiply" />
+          <svg
+            className="absolute right-0 top-0 opacity-[0.03] text-[#34226C] transform translate-x-1/3 -translate-y-1/4"
+            width="800"
+            height="800"
+            viewBox="0 0 100 100"
+          >
+            <path
+              d="M50 30 C60 30 70 0 80 20 C90 40 60 50 50 50 C40 50 10 40 20 20 C30 0 40 30 50 30"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+
+        {/* Header Section with Gradient */}
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#34226C] to-[#5f3dc4] p-8 shadow-lg">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            className="relative z-10"
           >
-            <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
-            <p className="text-muted-foreground mt-1">Welcome back, Admin! Here's what's happening.</p>
+            <h2 className="text-2xl font-medium tracking-tight text-white mb-2">Dashboard Overview</h2>
+            <p className="text-purple-100/80">Welcome back, Admin! Here's what's happening.</p>
           </motion.div>
-          <motion.div 
-            className="flex items-center gap-4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-10 h-10 rounded-full"
-            >
-              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleFullRefresh}
-              className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 transition-all duration-300"
-            >
-              <Clock className="h-4 w-4" />
-              Last updated: {new Date().toLocaleTimeString()}
-            </Button>
-            <Button 
-              onClick={handleFullRefresh}
-              className="flex items-center gap-2 bg-primary text-white hover:bg-primary/90 transition-all duration-300"
-            >
-              <Activity className="h-4 w-4" />
-              Refresh Data
-            </Button>
-          </motion.div>
+          <div className="absolute inset-0 bg-[url('/infinity-pattern.svg')] opacity-10" />
         </div>
 
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Stats Grid with Enhanced Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((card, index) => (
+          <motion.div 
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+              <Card className="overflow-hidden border-l-4 border-l-[#34226C] bg-white hover:bg-purple-50/50 transition-all duration-300 hover:shadow-lg shadow-md group">
+                <CardContent className="p-6">
+                  <motion.div 
+                    className="flex items-center justify-between mb-4"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <motion.div 
+                      className="p-2.5 rounded-xl bg-gradient-to-br from-[#5f3dc4] to-[#34226C]"
+                      animate={{ 
+                        boxShadow: ["0 0 0 0 rgba(52, 34, 108, 0.2)", "0 0 0 10px rgba(52, 34, 108, 0)"],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+            >
+                      <card.icon className="h-4 w-4 text-white" />
+                    </motion.div>
+                    <motion.span 
+                      className="text-xs font-medium text-[#5f3dc4]"
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      {card.change}
+                    </motion.span>
+          </motion.div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">{card.title}</p>
+                    <motion.div 
+                      className="flex items-baseline gap-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      <motion.h3 
+                        className="text-2xl font-semibold text-[#34226C]"
+                        animate={{ scale: [1, 1.02, 1] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        {card.value.toLocaleString()}
+                      </motion.h3>
+                    </motion.div>
+                    <p className="text-xs text-gray-500">{card.metric}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Quick Actions with Enhanced Styling */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence>
             {data.enrollmentStats.pendingEnrollments > 0 && (
               <motion.div
@@ -430,49 +487,51 @@ const AdminDashboard = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="overflow-hidden border-0 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+                <Card className="overflow-hidden border-l-4 border-l-yellow-400 bg-white hover:bg-yellow-50/50 transition-all duration-300 hover:shadow-lg shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <motion.div 
-                          className="p-2 rounded-full bg-yellow-100 text-yellow-600"
-                          whileHover={{ scale: 1.1 }}
+                          className="p-2.5 rounded-xl bg-yellow-100 text-yellow-600 dark:bg-yellow-900/50 dark:text-yellow-400"
+                          whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          animate={{ 
+                            boxShadow: ["0 0 0 0 rgba(234, 179, 8, 0.2)", "0 0 0 10px rgba(234, 179, 8, 0)"],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
                         >
-                          <Bell className="h-5 w-5" />
+                          <Bell className="h-4 w-4" />
                         </motion.div>
-                        <h3 className="font-semibold text-lg">Pending Enrollments</h3>
+                        <div>
+                          <h3 className="text-base font-medium">Pending Enrollments</h3>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {data.enrollmentStats.pendingEnrollments} requests need review
+                          </p>
+                        </div>
                       </div>
                       <Button 
                         onClick={() => navigate('/admin/enrollment-requests')}
                         variant="outline" 
-                        className="border-yellow-200 text-yellow-700 hover:bg-yellow-100/50 transition-all duration-300"
+                        className="h-9 px-3 text-xs border-yellow-200 text-yellow-700 hover:bg-yellow-50 dark:border-yellow-900 dark:text-yellow-400 dark:hover:bg-yellow-900/20 hover:shadow-md transition-all duration-300"
                       >
-                        Review Requests
+                        Review
                       </Button>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Pending Requests</span>
-                        <motion.span 
-                          className="font-medium"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          {data.enrollmentStats.pendingEnrollments}
-                        </motion.span>
-                      </div>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: "100%" }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
                       >
-                        <Progress value={75} className="h-2 bg-yellow-100" />
+                        <Progress 
+                          value={75} 
+                          className="h-1.5 bg-yellow-100 [--progress-foreground:theme(colors.yellow.500)]" 
+                        />
                       </motion.div>
-                      <p className="text-sm text-yellow-700">
-                        {data.enrollmentStats.pendingEnrollments} requests need your attention
-                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -486,49 +545,40 @@ const AdminDashboard = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+                <Card className="overflow-hidden border-l-4 border-l-primary bg-white hover:bg-purple-50/50 transition-all duration-300">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <motion.div 
-                          className="p-2 rounded-full bg-blue-100 text-blue-600"
-                          whileHover={{ scale: 1.1 }}
+                          className="p-2.5 rounded-xl bg-primary/10 text-primary"
+                          whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <UserCog className="h-5 w-5" />
+                          <UserCog className="h-4 w-4" />
                         </motion.div>
-                        <h3 className="font-semibold text-lg">Instructor Applications</h3>
+                        <div>
+                          <h3 className="text-base font-medium">Instructor Applications</h3>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {data.instructorStats.pendingApplications} applications pending
+                          </p>
+                        </div>
                       </div>
                       <Button 
                         onClick={() => navigate('/admin/instructor-approvals')}
                         variant="outline" 
-                        className="border-blue-200 text-blue-700 hover:bg-blue-100/50 transition-all duration-300"
+                        className="h-9 px-3 text-xs"
                       >
-                        Review Applications
+                        Review
                       </Button>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Pending Applications</span>
-                        <motion.span 
-                          className="font-medium"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          {data.instructorStats.pendingApplications}
-                        </motion.span>
-                      </div>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: "100%" }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
                       >
-                        <Progress value={60} className="h-2 bg-blue-100" />
+                        <Progress value={60} className="h-1.5" />
                       </motion.div>
-                      <p className="text-sm text-blue-700">
-                        {data.instructorStats.pendingApplications} applications awaiting review
-                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -537,79 +587,48 @@ const AdminDashboard = () => {
           </AnimatePresence>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {statCards.map((card, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <Card className="overflow-hidden border-0 bg-white/80 hover:bg-white/90 transition-all duration-300">
-                <CardContent className="p-6">
-                  <motion.div 
-                    className="flex items-center justify-between mb-4"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className={`p-2 rounded-lg ${card.color}`}>
-                      <card.icon className={`h-5 w-5 ${card.textColor}`} />
-                    </div>
-                    <TrendingUp className="h-4 w-4 text-green-500" />
-                  </motion.div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
-                    <motion.div 
-                      className="flex items-baseline gap-2"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
-                    >
-                      <h3 className="text-2xl font-semibold text-primary">{card.value.toLocaleString()}</h3>
-                      <span className="text-xs text-green-500">{card.change}</span>
-                    </motion.div>
-                    <p className="text-xs text-muted-foreground">{card.metric}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Platform Metrics */}
-        <div className="grid gap-4 grid-cols-1 max-w-6xl mx-auto">
-          {/* Course Engagement */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full"
-          >
-            <Card className="border-0 bg-white/90 transition-all duration-300 dark:bg-gray-950/90">
-              <CardHeader>
+        {/* Course Engagement Section */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+          <motion.div className="lg:col-span-2">
+            <Card className="border-l-4 border-l-[#34226C] bg-white hover:shadow-lg shadow-md transition-all duration-300">
+              <CardHeader className="pb-2">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="flex items-center gap-2 group">
-                      <BarChart2 className="h-4 w-4 text-primary" />
-                      <motion.span
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="text-primary"
-                      >
-                        Course Engagement
-                      </motion.span>
+                    <CardTitle className="flex items-center gap-2 text-lg font-medium">
+            <motion.div
+                        animate={{ 
+                          scale: [1, 1.1, 1],
+                          rotate: [0, 5, 0]
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                  >
+                        <BarChart2 className="h-4 w-4 text-[#34226C]" />
+                  </motion.div>
+                      Course Engagement
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {courses.length} Courses Available
-                      </span>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">
-                        {currentStudents.length} Active Students
-                      </span>
+                    <CardDescription className="flex items-center gap-2 mt-1">
+                      <motion.span 
+                        className="text-xs"
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        {courses.length} Courses
+                      </motion.span>
+                      <span className="text-xs">•</span>
+                      <motion.span
+                        className="text-xs"
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      >
+                        {currentStudents.length} Students
+                      </motion.span>
                     </CardDescription>
                   </div>
+                  <div className="flex items-center gap-3">
                   <Select
                     value={selectedCourse}
                     onValueChange={(value) => {
@@ -618,14 +637,14 @@ const AdminDashboard = () => {
                     }}
                     disabled={isLoadingCourses}
                   >
-                    <SelectTrigger className="w-full md:w-[280px] border-input focus:ring-1 focus:ring-ring">
+                      <SelectTrigger className="h-9 w-[200px] text-xs border-border">
                       <SelectValue>
                         {isLoadingCourses 
-                          ? "Loading courses..." 
-                          : (courses.find(c => c._id === selectedCourse)?.title || "Select a course")}
+                            ? "Loading..." 
+                            : (courses.find(c => c._id === selectedCourse)?.title || "Select course")}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
+                      <SelectContent>
                       {courses.length === 0 ? (
                         <SelectItem value="no-courses" disabled>
                           No courses available
@@ -635,16 +654,12 @@ const AdminDashboard = () => {
                           <SelectItem 
                             key={course._id} 
                             value={course._id}
-                            className="flex flex-col items-start py-2 hover:bg-accent cursor-pointer"
+                              className="py-2.5"
                           >
-                            <div className="font-medium text-base">{course.title}</div>
+                              <div className="text-sm font-medium">{course.title}</div>
                             <div className="flex items-center gap-1 mt-0.5">
                               <span className="text-xs text-muted-foreground">
                                 {course.instructor}
-                              </span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-muted-foreground">
-                                {course.duration}
                               </span>
                             </div>
                           </SelectItem>
@@ -652,6 +667,21 @@ const AdminDashboard = () => {
                       )}
                     </SelectContent>
                   </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                      className="h-9 px-3 text-xs gap-2 border-[#34226C] text-[#34226C] hover:bg-purple-50 transition-all duration-300"
+                    >
+                      <motion.div
+                        animate={{ rotate: sortOrder === 'desc' ? 0 : 180 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <TrendingUp className="h-4 w-4" />
+                      </motion.div>
+                      {sortOrder === 'desc' ? 'Highest Progress' : 'Lowest Progress'}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -659,13 +689,19 @@ const AdminDashboard = () => {
                   {/* Course Summary Stats */}
                   <div className="grid grid-cols-2 gap-4">
                     <motion.div 
-                      className="space-y-2 p-4 rounded-lg bg-accent/50 transition-all duration-300"
-                      whileHover={{ scale: 1.02, y: -2 }}
+                      className="space-y-2 p-4 rounded-xl bg-[#e6e0f7] transition-all duration-300 hover:shadow-lg shadow-md"
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <div className="flex justify-between text-sm">
-                        <span>Active Students</span>
-                        <span className="font-medium text-primary">{activeStudentsPercentage}%</span>
+                        <span className="text-xs font-medium">Active Students</span>
+                        <motion.span 
+                          className="text-xs font-medium text-primary"
+                          animate={{ opacity: [0.7, 1, 0.7] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          {activeStudentsPercentage}%
+                        </motion.span>
                       </div>
                       <motion.div
                         initial={{ width: 0 }}
@@ -674,25 +710,21 @@ const AdminDashboard = () => {
                       >
                         <Progress 
                           value={activeStudentsPercentage} 
-                          className="h-2 transition-all duration-300" 
+                          className="h-1.5 bg-purple-100" 
                           style={{
-                            background: `linear-gradient(90deg, var(--primary) ${activeStudentsPercentage}%, var(--muted) ${activeStudentsPercentage}%)`
-                          }}
+                            '--progress-background': 'linear-gradient(90deg, #5f3dc4, #34226C)'
+                          } as React.CSSProperties}
                         />
                       </motion.div>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <Clock className="h-3 w-3" />
-                        Last 7 days
-                      </p>
                     </motion.div>
                     <motion.div 
-                      className="space-y-2 p-4 rounded-lg bg-accent/50 transition-all duration-300"
-                      whileHover={{ scale: 1.02, y: -2 }}
+                      className="space-y-2 p-4 rounded-xl bg-[#e6e0f7] transition-all duration-300"
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <div className="flex justify-between text-sm">
-                        <span>Completion Rate</span>
-                        <span className="font-medium text-primary">{averageCompletion}%</span>
+                        <span className="text-xs font-medium">Completion Rate</span>
+                        <span className="text-xs font-medium text-primary">{averageCompletion}%</span>
                       </div>
                       <motion.div
                         initial={{ width: 0 }}
@@ -701,10 +733,7 @@ const AdminDashboard = () => {
                       >
                         <Progress 
                           value={averageCompletion} 
-                          className="h-2 transition-all duration-300"
-                          style={{
-                            background: `linear-gradient(90deg, var(--primary) ${averageCompletion}%, var(--muted) ${averageCompletion}%)`
-                          }}
+                          className="h-1.5"
                         />
                       </motion.div>
                       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -714,27 +743,10 @@ const AdminDashboard = () => {
                     </motion.div>
                   </div>
 
-                  {/* Student Progress List */}
+                  {/* Student Progress Cards - Now using sortedStudents */}
+                  <div className="grid grid-cols-1 gap-3">
                   <AnimatePresence>
-                    <motion.div 
-                      className="space-y-4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold tracking-wide text-primary">
-                          Student Progress ({currentStudents.length} students)
-                        </h4>
-                        {(isLoadingCourses || isLoadingProgress) && (
-                          <span className="text-xs text-muted-foreground">Loading...</span>
-                        )}
-                      </div>
-                      
-                      <ScrollArea className="h-[400px] w-full rounded-lg border border-border bg-accent/50">
-                        <div className="grid grid-cols-1 gap-3 p-4">
-                          <AnimatePresence>
-                            {currentStudents.map((student, index) => {
+                      {sortedStudents.map((student, index) => {
                               const [completed, total] = student.daysCompletedPerDuration.split('/').map(Number);
                               const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
                               const lastAccessed = new Date(student.lastAccessedAt).toLocaleDateString();
@@ -747,66 +759,48 @@ const AdminDashboard = () => {
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: -20 }}
                                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                                  whileHover={{ scale: 1.01, x: 4 }}
+                            whileHover={{ scale: 1.01 }}
                                 >
-                                  <div 
-                                    className={`flex items-center gap-4 p-4 rounded-lg bg-background border border-border hover:bg-accent/50 transition-all group relative ${
-                                      isComplete ? 'ring-1 ring-primary/20' : ''
-                                    }`}
-                                  >
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-white border-l-4 border-l-[#34226C] hover:bg-[#e6e0f7]/20 transition-all group shadow-md hover:shadow-lg">
                                     <motion.div 
-                                      className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg"
-                                      whileHover={{ scale: 1.05, rotate: 5 }}
+                                className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-[#5f3dc4] to-[#34226C] flex items-center justify-center text-white font-medium text-sm"
+                                whileHover={{ scale: 1.05 }}
                                       whileTap={{ scale: 0.95 }}
-                                      transition={{ duration: 0.2 }}
                                     >
                                       {student.name ? student.name.charAt(0).toUpperCase() : '?'}
                                     </motion.div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <span className="font-medium">{student.name}</span>
+                                  <span className="text-sm font-medium text-[#34226C]">{student.name}</span>
                                         {isComplete && (
                                           <motion.span 
-                                            className="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700 font-medium dark:bg-emerald-900/50 dark:text-emerald-300"
+                                      className="px-1.5 py-0.5 rounded-full text-[10px] bg-[#e6e0f7] text-[#34226C] font-medium"
                                             initial={{ opacity: 0, scale: 0.8 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            whileHover={{ scale: 1.05 }}
                                           >
-                                            Completed
-                                          </motion.span>
-                                        )}
-                                        {!isComplete && (
-                                          <motion.span 
-                                            className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
-                                            initial={{ opacity: 0, scale: 0.8 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            whileHover={{ scale: 1.05 }}
-                                          >
-                                            {student.status}
+                                      Complete
                                           </motion.span>
                                         )}
                                       </div>
-                                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
-                                        <span>Last accessed: {lastAccessed}</span>
-                                        <span className="mx-1">•</span>
-                                        <span>Progress: <span className="font-medium text-primary">{percentage}%</span></span>
-                                        <span className="mx-1">•</span>
-                                        <span className="font-medium">{completed} / {total} days</span>
-                                      </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="flex-1">
                                       <motion.div 
-                                        className="flex items-center gap-2"
                                         initial={{ width: 0 }}
                                         animate={{ width: "100%" }}
                                         transition={{ duration: 0.8, ease: "easeOut" }}
                                       >
                                         <Progress 
                                           value={percentage} 
-                                          className="h-2 flex-1 transition-all duration-300"
-                                          style={{
-                                            background: `linear-gradient(90deg, var(--primary) ${percentage}%, var(--muted) ${percentage}%)`
-                                          }}
+                                        className="h-1.5 bg-purple-100 [--progress-foreground:theme(colors.purple.600)]"
                                         />
                                       </motion.div>
+                                  </div>
+                                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                                    <span className="font-medium text-[#34226C]">{percentage}%</span>
+                                    <span>•</span>
+                                    <span>{completed}/{total} days</span>
+                                  </div>
+                                </div>
                                     </div>
                                   </div>
                                 </motion.div>
@@ -814,51 +808,51 @@ const AdminDashboard = () => {
                             })}
                           </AnimatePresence>
                         </div>
-                      </ScrollArea>
-                    </motion.div>
-                  </AnimatePresence>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Recent Activity */}
+          {/* Recent Activity Panel */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-full"
           >
-            <Card className="border-0 bg-white/90 transition-all duration-300 dark:bg-gray-950/90">
-              <CardHeader>
+            <Card className="border-l-4 border-l-[#34226C] bg-white hover:shadow-lg shadow-md transition-all duration-300">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 group">
+                  <CardTitle className="text-lg font-medium flex items-center gap-2">
+                    <motion.div
+                      animate={{ 
+                        scale: [1, 1.1, 1],
+                        rotate: [0, 5, 0]
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
                       <Activity className="h-4 w-4 text-primary" />
-                      <motion.span
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="text-primary"
-                      >
+                    </motion.div>
                         Recent Activity
-                      </motion.span>
                     </CardTitle>
-                    <CardDescription>Latest actions and events</CardDescription>
-                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowActivityPanel(!showActivityPanel)}
-                    className="w-8 h-8 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 transition-colors duration-300 dark:hover:from-violet-950/40 dark:hover:to-indigo-950/40"
+                    className="h-8 w-8 hover:bg-accent"
                   >
                     <motion.div
                       animate={{ rotate: showActivityPanel ? 180 : 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <TrendingUp className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      <TrendingUp className="h-4 w-4 text-primary" />
                     </motion.div>
                   </Button>
                 </div>
+                <CardDescription className="mt-1">Latest actions and events</CardDescription>
               </CardHeader>
               <AnimatePresence>
                 {showActivityPanel && (
@@ -868,9 +862,9 @@ const AdminDashboard = () => {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <CardContent>
-                      <ScrollArea className="h-[300px] w-full pr-2">
-                        <div className="space-y-4">
+                    <CardContent className="pt-0">
+                      <ScrollArea className="h-[600px] -mx-2 px-2">
+                        <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-0 before:h-full before:w-px before:bg-[#e6e0f7]">
                           <AnimatePresence>
                             {data.recentActivities.map((activity, index) => (
                               <motion.div
@@ -879,23 +873,41 @@ const AdminDashboard = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: 20 }}
                                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                                whileHover={{ x: 4, scale: 1.01 }}
+                                whileHover={{ x: 2 }}
                               >
-                                <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-indigo-50/50 transition-all duration-300 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20">
+                                <div className="relative flex items-start gap-4 py-2">
                                   <motion.div 
-                                    className="p-2 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900 dark:to-indigo-900"
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    className="absolute left-[-1.65rem] p-1.5 rounded-full bg-accent"
+                                    animate={{ 
+                                      scale: [1, 1.2, 1],
+                                      boxShadow: [
+                                        "0 0 0 0 rgba(var(--primary), 0.2)",
+                                        "0 0 0 4px rgba(var(--primary), 0)",
+                                        "0 0 0 0 rgba(var(--primary), 0.2)"
+                                      ]
+                                    }}
+                                    transition={{
+                                      duration: 2,
+                                      repeat: Infinity,
+                                      ease: "easeInOut"
+                                    }}
                                   >
-                                    <Award className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                    <div className="h-1 w-1 rounded-full bg-primary" />
                                   </motion.div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate text-indigo-900 dark:text-indigo-100">{activity.action}</p>
-                                    <p className="text-xs text-muted-foreground">{activity.user}</p>
-                                  </div>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    <p className="text-sm font-medium">{activity.action}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-xs text-muted-foreground">{activity.user}</span>
+                                      <span className="text-xs text-muted-foreground">•</span>
+                                      <motion.span 
+                                        className="text-xs text-muted-foreground"
+                                        animate={{ opacity: [0.5, 1, 0.5] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                      >
                                     {activity.time}
-                                  </span>
+                                      </motion.span>
+                                    </div>
+                                  </div>
                                 </div>
                               </motion.div>
                             ))}

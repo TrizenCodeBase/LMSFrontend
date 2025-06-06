@@ -75,11 +75,11 @@ interface EnrolledCourse extends Course {
 const QUOTES = [
   {
     text: "Learning is a journey — every quiz takes you one step closer to mastery.",
-    author: "Spark Design Studio"
+    author: "Trizen Ventures"
   },
   {
     text: "The more you practice, the more you understand. Keep going!",
-    author: "Spark Design Studio"
+    author: "Trizen Ventures"
   }
 ];
 
@@ -394,7 +394,7 @@ const Assignments = () => {
                     <div>
                       <p className="text-sm text-white/70">Total Quizzes</p>
                       <p className="text-lg font-semibold text-white">
-                        {quizStats?.uniqueQuizzes || 0}
+                        {availableQuizzes.length || 0}
                       </p>
                     </div>
                   </div>

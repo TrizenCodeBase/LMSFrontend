@@ -11,7 +11,8 @@ import {
   Receipt,
   MessageSquare,
   UserCheck,
-  LifeBuoy
+  LifeBuoy,
+  Trophy
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -63,6 +64,7 @@ const AdminLayout = ({ children, pendingEnrollments = 0 }: AdminLayoutProps) => 
       title: "Analytics",
       items: [
         { icon: BarChart3, name: 'Analytics', path: '/admin/analytics' },
+        { icon: Trophy, name: 'Leaderboard', path: '/admin/leaderboard' },
       ]
     }
   ];
@@ -98,7 +100,8 @@ const AdminLayout = ({ children, pendingEnrollments = 0 }: AdminLayoutProps) => 
             "shadow-xl dark:shadow-gray-900/50",
             collapsed ? "w-20" : "w-[260px]",
             "lg:translate-x-0 transform transition-all duration-200",
-            mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+            "flex flex-col"
           )}
         >
           {/* Logo & Collapse */}
@@ -130,75 +133,77 @@ const AdminLayout = ({ children, pendingEnrollments = 0 }: AdminLayoutProps) => 
           </div>
 
           {/* Menu Items - Scrollable Area */}
-          <nav className="py-6 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-            {menuSections.map((section, sectionIndex) => (
-              <div 
-                key={sectionIndex}
-                className="mb-4"
-              >
-                {!collapsed && (
-                  <h3 className="px-6 mb-2 text-xs font-medium text-[#8E8E93] dark:text-gray-400 uppercase tracking-wider">
-                    {section.title}
-                  </h3>
-                )}
-                <ul className="space-y-1 px-3">
-                  {section.items.map((item) => (
-                    <li key={item.name}>
-                      <Link 
-                        to={item.path}
-                        className={cn(
-                          "flex items-center py-2 px-3 rounded-lg transition-all duration-200",
-                          "hover:bg-[#F6F4FD] dark:hover:bg-gray-800",
-                          "group relative cursor-pointer",
-                          "hover:shadow-md dark:hover:shadow-gray-900/30",
-                          isActive(item.path) && "bg-[#EFEBFA] dark:bg-gray-800 text-[#3E1E97] dark:text-white font-medium shadow-md dark:shadow-gray-900/30"
-                        )}
-                      >
-                        <item.icon className={cn(
-                          "h-5 w-5",
-                          isActive(item.path) ? "text-[#3E1E97] dark:text-white" : "text-gray-500",
-                          collapsed ? "mx-auto" : "mr-3"
-                        )} />
-                        {!collapsed && (
-                          <span className="text-sm">{item.name}</span>
-                        )}
-                        {item.name === 'Enrollment Requests' && !collapsed && pendingEnrollments > 0 && (
-                          <span className="ml-auto bg-[#EFEBFA] dark:bg-gray-700 text-[#3E1E97] dark:text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-sm dark:shadow-gray-900/30">
-                            New
-                          </span>
-                        )}
-                        {collapsed && (
-                          <div className="absolute left-16 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white rounded-md text-sm whitespace-nowrap z-50 shadow-xl dark:shadow-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {item.name}
-                          </div>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                {!collapsed && sectionIndex < menuSections.length - 1 && (
-                  <div className="my-4 border-t border-gray-100 dark:border-gray-800" />
-                )}
-              </div>
-            ))}
-          </nav>
+          <div className="flex-1 flex flex-col min-h-0">
+            <nav className="flex-1 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+              {menuSections.map((section, sectionIndex) => (
+                <div 
+                  key={sectionIndex}
+                  className="mb-4"
+                >
+                  {!collapsed && (
+                    <h3 className="px-6 mb-2 text-xs font-medium text-[#8E8E93] dark:text-gray-400 uppercase tracking-wider">
+                      {section.title}
+                    </h3>
+                  )}
+                  <ul className="space-y-1 px-3">
+                    {section.items.map((item) => (
+                      <li key={item.name}>
+                        <Link 
+                          to={item.path}
+                          className={cn(
+                            "flex items-center py-2 px-3 rounded-lg transition-all duration-200",
+                            "hover:bg-[#F6F4FD] dark:hover:bg-gray-800",
+                            "group relative cursor-pointer",
+                            "hover:shadow-md dark:hover:shadow-gray-900/30",
+                            isActive(item.path) && "bg-[#EFEBFA] dark:bg-gray-800 text-[#3E1E97] dark:text-white font-medium shadow-md dark:shadow-gray-900/30"
+                          )}
+                        >
+                          <item.icon className={cn(
+                            "h-5 w-5",
+                            isActive(item.path) ? "text-[#3E1E97] dark:text-white" : "text-gray-500",
+                            collapsed ? "mx-auto" : "mr-3"
+                          )} />
+                          {!collapsed && (
+                            <span className="text-sm">{item.name}</span>
+                          )}
+                          {item.name === 'Enrollment Requests' && !collapsed && pendingEnrollments > 0 && (
+                            <span className="ml-auto bg-[#EFEBFA] dark:bg-gray-700 text-[#3E1E97] dark:text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-sm dark:shadow-gray-900/30">
+                              New
+                            </span>
+                          )}
+                          {collapsed && (
+                            <div className="absolute left-16 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white rounded-md text-sm whitespace-nowrap z-50 shadow-xl dark:shadow-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {item.name}
+                            </div>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {!collapsed && sectionIndex < menuSections.length - 1 && (
+                    <div className="my-4 border-t border-gray-100 dark:border-gray-800" />
+                  )}
+                </div>
+              ))}
+            </nav>
 
-          {/* User Profile & Logout */}
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800">
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start gap-2",
-                "text-red-500 border-red-200 dark:border-red-900",
-                "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20",
-                "rounded-lg transition-all duration-200",
-                "shadow-sm hover:shadow-md dark:shadow-gray-900/30"
-              )}
-              onClick={handleLogout}
-            >
-              <LogOut className={cn("h-5 w-5", collapsed ? "mx-auto" : "mr-2")} />
-              {!collapsed && <span>Sign Out</span>}
-            </Button>
+            {/* User Profile & Logout - Fixed at bottom */}
+            <div className="mt-auto sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4">
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start gap-2",
+                  "text-red-500 border-red-200 dark:border-red-900",
+                  "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20",
+                  "rounded-lg transition-all duration-200",
+                  "shadow-sm hover:shadow-md dark:shadow-gray-900/30"
+                )}
+                onClick={handleLogout}
+              >
+                <LogOut className={cn("h-5 w-5", collapsed ? "mx-auto" : "mr-2")} />
+                {!collapsed && <span>Sign Out</span>}
+              </Button>
+            </div>
           </div>
         </aside>
 

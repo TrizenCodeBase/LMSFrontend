@@ -149,22 +149,6 @@ const CourseQuizView = () => {
   const handleQuizComplete = async (score: number, selectedAnswers: number[]) => {
     if (!course?.courseUrl || !token || !dayNumber || !course?._id) return;
 
-    // Check if max attempts reached
-    if (quizResults.length >= MAX_ATTEMPTS) {
-      toast({
-        description: (
-          <CustomToast 
-            title="Maximum Attempts Reached"
-            description="You have reached the maximum number of attempts for this quiz."
-            type="warning"
-          />
-        ),
-        duration: 3000,
-        className: "p-0 bg-transparent border-0"
-      });
-      return;
-    }
-
     try {
       const attemptNumber = quizResults.length + 1;
 
@@ -172,7 +156,6 @@ const CourseQuizView = () => {
       const response = await axios.post('/api/quiz-submissions', {
         courseUrl: course.courseUrl,
         dayNumber: parseInt(dayNumber),
-        title: `Quiz ${quizNumber}`,
         questions: currentDay?.mcqs,
         selectedAnswers,
         score,
@@ -189,35 +172,43 @@ const CourseQuizView = () => {
           completedAt: new Date(),
           totalQuestions: currentDay?.mcqs?.length || 0,
           attemptNumber,
-          isCompleted: score >= 70
+          isCompleted: score >= 10
         };
 
         setQuizResults(prev => [newAttempt, ...prev]);
         
+        // Show appropriate message based on score
         if (score >= 70) {
           toast({
             description: (
               <CustomToast 
-                title="Quiz Completed!"
-                description={`Congratulations! You've completed Quiz ${quizNumber} with a score of ${score}%.`}
+                title="Quiz Passed!"
+                description={`Congratulations! You've passed the quiz with ${score}%. Great job!`}
                 type="success"
               />
             ),
             duration: 5000,
             className: "p-0 bg-transparent border-0"
           });
-        } else {
-          const remainingAttempts = MAX_ATTEMPTS - attemptNumber;
+        } else if (score >= 10) {
           toast({
             description: (
               <CustomToast 
-                title="Quiz Submitted"
-                description={`You scored ${score}%. ${
-                  remainingAttempts > 0 
-                    ? `You have ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.` 
-                    : 'This was your last attempt.'
-                }`}
-                type="info"
+                title="Quiz Completed - Not Passed"
+                description={`You scored ${score}%. You need 70% or higher to pass. You can retake the quiz to improve your score.`}
+                type="warning"
+              />
+            ),
+            duration: 5000,
+            className: "p-0 bg-transparent border-0"
+          });
+        } else {
+          toast({
+            description: (
+              <CustomToast 
+                title="Quiz Not Completed"
+                description={`You scored ${score}%. You need at least 10% to complete the quiz.`}
+                type="error"
               />
             ),
             duration: 3000,

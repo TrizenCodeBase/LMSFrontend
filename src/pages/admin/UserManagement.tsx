@@ -21,7 +21,11 @@ import {
   UserCheck, 
   Eye,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  GraduationCap,
+  CalendarDays,
+  Clock,
+  Users
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -237,203 +241,322 @@ const UserManagement = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-4 sm:p-6 md:p-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary drop-shadow-sm">User Management</h2>
-        </div>
-        
-        {/* Responsive Tabs */}
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-        <Tabs value={selectedTab} onValueChange={v => setSelectedTab(v as 'student' | 'instructor')} className="mb-4">
-            <TabsList className="bg-white/90 rounded-xl shadow border flex gap-2 p-1 w-full sm:w-auto">
-              <TabsTrigger value="student" className="flex-1 sm:flex-initial flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm sm:text-base data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              Students
-              <span className="ml-2 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-bold">{studentCount}</span>
-            </TabsTrigger>
-              <TabsTrigger value="instructor" className="flex-1 sm:flex-initial flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm sm:text-base data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              Instructors
-              <span className="ml-2 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-bold">{instructorCount}</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <div className="min-h-screen bg-[#f9f9fb] p-6 sm:p-8">
+        {/* Header Section with Purple Theme */}
+        <div className="mb-8">
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#34226C] to-[#5f3dc4] p-6 shadow-lg">
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold text-white">User Management</h1>
+                <p className="text-purple-100/80 text-sm mt-0.5">Manage and monitor user accounts</p>
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-[url('/infinity-pattern.svg')] opacity-10" />
+          </div>
         </div>
 
-        <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-blue-50 to-blue-100">
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl font-semibold text-primary">{selectedTab === 'student' ? 'Students' : 'Instructors'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Responsive Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        {/* Tabs & Filters Section */}
+        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border border-purple-100/50">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+            <div className="flex-1">
+              <Tabs value={selectedTab} onValueChange={v => setSelectedTab(v as 'student' | 'instructor')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-[400px] bg-[#e6e0f7] p-1 rounded-lg">
+                  <TabsTrigger 
+                    value="student"
+                    className="rounded-lg px-4 py-2.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5f3dc4] data-[state=active]:to-[#34226C] data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      <span>Students</span>
+                      <span className="ml-1.5 bg-white/20 text-inherit text-xs px-2 py-0.5 rounded-full">
+                        {studentCount}
+                      </span>
+                    </div>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="instructor"
+                    className="rounded-lg px-4 py-2.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5f3dc4] data-[state=active]:to-[#34226C] data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4" />
+                      <span>Instructors</span>
+                      <span className="ml-1.5 bg-white/20 text-inherit text-xs px-2 py-0.5 rounded-full">
+                        {instructorCount}
+                      </span>
+                    </div>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-[#5f3dc4] transition-colors" />
                 <Input
-                  placeholder="Search users..."
-                  className="pl-8 rounded-lg border-primary focus:ring-2 focus:ring-primary/50 shadow-sm w-full"
+                  placeholder="Search by name, email, or ID..."
+                  className="pl-10 pr-4 h-10 w-full sm:w-[300px] rounded-xl border-gray-200 focus:border-[#5f3dc4] focus:ring focus:ring-[#5f3dc4]/20 group-hover:border-[#5f3dc4]/50 transition-all"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[180px] rounded-lg border-primary focus:ring-2 focus:ring-primary/50 shadow-sm">
+                <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl border-gray-200 focus:border-[#5f3dc4] focus:ring focus:ring-[#5f3dc4]/20 hover:border-[#5f3dc4]/50 transition-all">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-gray-200">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
-            <hr className="my-2 border-blue-100" />
-            
-            {/* Responsive Table */}
-            <div className="-mx-4 sm:mx-0 sm:rounded-xl border overflow-x-auto bg-white/90 shadow-lg">
-              <Table className="min-w-[900px]">
-                <TableHeader className="sticky top-0 z-10 bg-white/95 border-b shadow-sm">
+          </div>
+        </div>
+
+        {/* Users List */}
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-purple-100/50">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-[#e6e0f7]/30">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-[50px] font-medium text-[#34226C]">No.</TableHead>
+                  <TableHead className="font-medium text-[#34226C] w-[140px]">User ID</TableHead>
+                  <TableHead className="font-medium text-[#34226C]">User Details</TableHead>
+                  <TableHead className="font-medium text-[#34226C] hidden md:table-cell">Email</TableHead>
+                  <TableHead className="font-medium text-[#34226C]">Role</TableHead>
+                  <TableHead className="font-medium text-[#34226C]">Status</TableHead>
+                  <TableHead className="font-medium text-[#34226C] hidden lg:table-cell">Joined</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
                   <TableRow>
-                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">S.No</TableHead>
-                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">Name</TableHead>
-                    <TableHead className="hidden sm:table-cell py-2 text-sm sm:text-base font-semibold text-primary">User ID</TableHead>
-                    <TableHead className="hidden md:table-cell py-2 text-sm sm:text-base font-semibold text-primary">Email</TableHead>
-                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">Role</TableHead>
-                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary">Status</TableHead>
-                    <TableHead className="hidden lg:table-cell py-2 text-sm sm:text-base font-semibold text-primary">Joined</TableHead>
-                    <TableHead className="hidden lg:table-cell py-2 text-sm sm:text-base font-semibold text-primary">Last Active</TableHead>
-                    <TableHead className="py-2 text-sm sm:text-base font-semibold text-primary text-right">Actions</TableHead>
+                    <TableCell colSpan={8} className="h-32">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-full border-4 border-purple-100 opacity-25"></div>
+                          <div className="h-12 w-12 rounded-full border-4 border-purple-100 border-r-[#5f3dc4] animate-spin"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-purple-100 border-l-[#5f3dc4] animate-spin-reverse [animation-delay:-0.2s]"></div>
+                        </div>
+                        <p className="text-sm text-gray-500 animate-pulse">Loading users...</p>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableLoader colSpan={9} message="Loading users..." />
-                  ) : error ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="h-24 text-center text-red-500">
-                        <div className="flex justify-center items-center">
-                          <AlertTriangle className="h-6 w-4 mr-2" />
-                          <span>Failed to load users. Please try again.</span>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-32">
+                      <div className="flex flex-col items-center justify-center text-red-500 gap-2">
+                        <div className="p-3 rounded-full bg-red-50">
+                          <AlertTriangle className="h-6 w-6" />
+                        </div>
+                        <p className="text-sm font-medium">Failed to load users</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => window.location.reload()}
+                          className="mt-2"
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-32">
+                      <div className="flex flex-col items-center justify-center text-gray-500 gap-2">
+                        <div className="p-3 rounded-full bg-gray-50">
+                          <Search className="h-6 w-6" />
+                        </div>
+                        <p className="text-sm font-medium">No users found</p>
+                        <p className="text-sm">Try adjusting your search or filters</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user, index) => (
+                    <TableRow 
+                      key={user._id || user.id} 
+                      className="group hover:bg-[#e6e0f7]/20 transition-colors duration-200"
+                    >
+                      <TableCell className="font-medium text-gray-500 text-sm">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <span className="text-xs font-medium text-[#34226C] bg-[#e6e0f7] px-2.5 py-1 rounded-lg border border-purple-200">
+                            {user.userId || 'N/A'}
+                          </span>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ) : filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
-                        No users found matching the current filters.
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 rounded-xl border-2 border-white shadow-sm bg-gradient-to-br from-[#5f3dc4]/10 to-[#34226C]/10 group-hover:from-[#5f3dc4]/20 group-hover:to-[#34226C]/20 transition-all duration-300">
+                            <AvatarFallback className="font-medium text-[#5f3dc4] group-hover:text-[#34226C] transition-colors">
+                              {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 group-hover:text-[#5f3dc4] transition-colors">{user.name}</p>
+                            <p className="text-xs text-gray-500 hidden sm:block md:hidden">{user.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="text-sm text-gray-600">{user.email}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={
+                          user.role === 'instructor'
+                            ? 'bg-[#e6e0f7] text-[#34226C] hover:bg-[#e6e0f7]/80'
+                            : 'bg-purple-100 text-[#5f3dc4] hover:bg-purple-200'
+                        }>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(user.status)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <CalendarDays className="h-4 w-4 text-[#5f3dc4]" />
+                          {formatDate(user.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-[#e6e0f7]"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[180px] rounded-xl p-2">
+                            <DropdownMenuItem 
+                              onClick={() => handleUserAction('View', user)}
+                              className="flex items-center gap-2 rounded-lg cursor-pointer hover:bg-[#e6e0f7]/50"
+                            >
+                              <Eye className="h-4 w-4 text-[#5f3dc4]" />
+                              <span>View Profile</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleUserAction('Edit', user)}
+                              className="flex items-center gap-2 rounded-lg cursor-pointer hover:bg-[#e6e0f7]/50"
+                            >
+                              <Edit className="h-4 w-4 text-[#5f3dc4]" />
+                              <span>Edit Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {user.status !== 'suspended' ? (
+                              <DropdownMenuItem 
+                                onClick={() => handleUserAction('Suspend', user)}
+                                className="flex items-center gap-2 rounded-lg cursor-pointer text-amber-600 hover:bg-amber-50"
+                              >
+                                <Ban className="h-4 w-4" />
+                                <span>Suspend User</span>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem 
+                                onClick={() => handleUserAction('Activate', user)}
+                                className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-600 hover:bg-emerald-50"
+                              >
+                                <UserCheck className="h-4 w-4" />
+                                <span>Activate User</span>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => handleUserAction('Delete', user)}
+                              className="flex items-center gap-2 rounded-lg cursor-pointer text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span>Delete User</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ) :
-                    filteredUsers.map((user, index) => (
-                      <TableRow key={user._id || user.id} className="hover:bg-blue-100/60 transition-colors group">
-                        <TableCell className="font-medium text-center text-sm">
-                          {index + 1}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-3 py-2">
-                            <Avatar className="w-8 h-8 sm:w-9 sm:h-9 border shadow-sm bg-primary/10 group-hover:bg-primary group-hover:text-white transition-colors duration-150">
-                            <AvatarFallback>{user.name ? user.name.charAt(0).toUpperCase() : '?'}</AvatarFallback>
-                          </Avatar>
-                            <span className="truncate max-w-[100px] sm:max-w-[140px] text-sm group-hover:text-primary font-semibold transition-colors duration-150" title={user.name}>
-                              {user.name}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge variant="outline" className="font-mono text-xs px-2 py-1 bg-muted/60 border-primary/20">
-                            {user.userId || 'N/A'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell truncate max-w-[140px] text-sm" title={user.email}>
-                          {user.email}
-                        </TableCell>
-                        <TableCell className="capitalize">
-                          <Badge className={
-                            user.role === 'instructor'
-                              ? 'bg-purple-100 text-purple-700 hover:bg-purple-600 hover:text-white transition-colors duration-150'
-                              : 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors duration-150'
-                          }>
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(user.status)}</TableCell>
-                        <TableCell className="hidden lg:table-cell text-sm">{formatDate(user.createdAt)}</TableCell>
-                        <TableCell className="hidden lg:table-cell text-sm">{formatDate(user.lastActive)}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Actions</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[160px]">
-                              <DropdownMenuItem onClick={() => handleUserAction('View', user)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUserAction('Edit', user)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {user.status !== 'suspended' ? (
-                                <DropdownMenuItem onClick={() => handleUserAction('Suspend', user)}>
-                                  <Ban className="mr-2 h-4 w-4" />
-                                  Suspend
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem onClick={() => handleUserAction('Activate', user)}>
-                                  <UserCheck className="mr-2 h-4 w-4" />
-                                  Activate
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => handleUserAction('Delete', user)}
-                                className="text-red-600 focus:text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  }
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog with Updated Theme */}
       <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmAction === 'delete' ? 'Delete User' : 
-               confirmAction === 'suspend' ? 'Suspend User' : 'Activate User'}
+            <AlertDialogTitle className="flex items-center gap-3">
+              <div className={
+                confirmAction === 'delete'
+                  ? 'p-2 rounded-lg bg-red-100 text-red-600'
+                  : confirmAction === 'suspend'
+                  ? 'p-2 rounded-lg bg-amber-100 text-amber-600'
+                  : 'p-2 rounded-lg bg-[#e6e0f7] text-[#5f3dc4]'
+              }>
+                {confirmAction === 'delete' ? <Trash2 className="h-5 w-5" /> :
+                 confirmAction === 'suspend' ? <Ban className="h-5 w-5" /> :
+                 <UserCheck className="h-5 w-5" />}
+              </div>
+              <span className={
+                confirmAction === 'delete'
+                  ? 'text-red-600'
+                  : confirmAction === 'suspend'
+                  ? 'text-amber-600'
+                  : 'text-[#5f3dc4]'
+              }>
+                {confirmAction === 'delete' ? 'Delete User' : 
+                 confirmAction === 'suspend' ? 'Suspend User' : 'Activate User'}
+              </span>
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-gray-600 mt-4">
               {confirmAction === 'delete' ? 
-                `Are you sure you want to delete ${selectedUser?.name}? This action cannot be undone.` : 
+                <div className="space-y-2">
+                  <p>Are you sure you want to delete <span className="font-medium text-gray-900">{selectedUser?.name}</span>?</p>
+                  <p className="text-red-600 bg-red-50 px-3 py-2 rounded-lg text-sm">
+                    This action cannot be undone. All user data will be permanently removed.
+                  </p>
+                </div> : 
                confirmAction === 'suspend' ? 
-                `Are you sure you want to suspend ${selectedUser?.name}? They will no longer be able to access their account.` :
-                `Are you sure you want to activate ${selectedUser?.name}? They will regain access to their account.`
+                <div className="space-y-2">
+                  <p>Are you sure you want to suspend <span className="font-medium text-gray-900">{selectedUser?.name}</span>?</p>
+                  <p className="text-amber-600 bg-amber-50 px-3 py-2 rounded-lg text-sm">
+                    They will no longer be able to access their account until reactivated.
+                  </p>
+                </div> :
+                <div className="space-y-2">
+                  <p>Are you sure you want to activate <span className="font-medium text-gray-900">{selectedUser?.name}</span>?</p>
+                  <p className="text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg text-sm">
+                    They will regain full access to their account.
+                  </p>
+                </div>
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel className="rounded-lg border-gray-200">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
                 handleConfirmAction();
               }}
-              className={confirmAction === 'delete' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={`rounded-lg transition-all duration-200 ${
+                confirmAction === 'delete'
+                  ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500/40'
+                  : confirmAction === 'suspend'
+                  ? 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500/40'
+                  : 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500/40'
+              }`}
               disabled={updateUserStatusMutation.isPending || deleteUserMutation.isPending}
             >
               {(updateUserStatusMutation.isPending || deleteUserMutation.isPending) && 

@@ -225,11 +225,26 @@ const EnrollmentRequests = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-500">Approved</Badge>;
+        return (
+          <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Approved
+          </Badge>
+        );
       case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
+        return (
+          <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
+            <XCircle className="w-3 h-3 mr-1" />
+            Rejected
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">Pending</Badge>;
+        return (
+          <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Pending
+          </Badge>
+        );
     }
   };
 
@@ -423,21 +438,21 @@ const EnrollmentRequests = () => {
 
   return (
     <AdminLayout>
-      <div className="h-[calc(100vh-4rem)] overflow-hidden bg-gray-50/50">
-        {/* Add Undo Delete Alert - Only show when not in deleted tab */}
+      <div className="min-h-screen bg-[#f9f9fb] p-6 sm:p-8">
+        {/* Add Undo Delete Alert */}
         {showUndoDelete && recentlyDeletedRequests.length > 0 && activeTab !== 'deleted' && (
           <div className="fixed bottom-4 right-4 z-50">
-            <Alert className="bg-white shadow-lg border-primary/20">
-              <AlertCircle className="h-4 w-4 text-primary" />
+            <Alert className="bg-white shadow-lg border border-[#e6e0f7] rounded-xl">
+              <AlertCircle className="h-4 w-4 text-[#5f3dc4]" />
               <AlertDescription className="flex items-center gap-4">
-                <span>
+                <span className="text-gray-600">
                   Deleted {recentlyDeletedRequests.length} request(s)
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => restoreMutation.mutate(recentlyDeletedRequests.map(r => r._id))}
-                  className="gap-2"
+                  className="gap-2 hover:bg-[#e6e0f7] border-[#5f3dc4] text-[#5f3dc4]"
                 >
                   <RefreshCcw className="h-4 w-4" />
                   Undo Delete
@@ -447,133 +462,92 @@ const EnrollmentRequests = () => {
           </div>
         )}
         
-        <div className="h-full max-w-[1200px] mx-auto flex flex-col overflow-hidden">
-          {/* Header and Stats Section - Fixed Height */}
-          <div className="p-4 lg:p-6 pb-2 lg:pb-4 space-y-4 flex-none">
+        <div className="space-y-8">
             {/* Header Section */}
-            <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
+          <div className="mb-8">
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#34226C] to-[#5f3dc4] p-6 shadow-lg">
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                  <BookOpen className="h-6 w-6 text-white" />
+                </div>
               <div>
-                <h2 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  Enrollment Requests
-                </h2>
-                <p className="text-muted-foreground mt-0.5 text-sm">
-                  Manage and track course enrollment requests
-                </p>
+                  <h1 className="text-2xl font-semibold text-white">Enrollment Requests</h1>
+                  <p className="text-purple-100/80 text-sm mt-0.5">Manage and track course enrollment requests</p>
               </div>
               <Button 
                 onClick={() => queryClient.invalidateQueries({ queryKey: ['enrollment-requests'] })}
-                variant="outline"
-                className="self-start hover:shadow-md transition-all duration-200"
-                size="sm"
+                  className="ml-auto bg-white/10 hover:bg-white/20 text-white rounded-xl border-0 backdrop-blur-sm transition-all duration-200 shadow-lg shadow-black/5"
               >
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                Refresh Data
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Refresh
               </Button>
+              </div>
+              <div className="absolute inset-0 bg-[url('/infinity-pattern.svg')] opacity-10" />
+            </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all duration-200 hover:shadow-xl border-l-4",
-                  "transform hover:-translate-y-1 hover:bg-green-50/50",
-                  "border-l-green-500"
-                )}
-                onClick={() => setActiveTab('approved')}
-              >
-                <CardHeader className="p-2.5">
-                  <div className="flex items-center justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Approved Stats */}
+            <div className="group bg-white rounded-xl px-6 py-4 flex items-center justify-between shadow-md hover:shadow-lg transition-all duration-200 border border-[#e6e0f7]">
                     <div>
-                      <CardTitle className="text-xl lg:text-2xl font-bold text-green-600">{counts.approved}</CardTitle>
-                      <CardDescription className="text-sm font-medium">Approved</CardDescription>
+                <p className="text-sm text-gray-600">Approved</p>
+                <p className="font-bold text-2xl text-[#5f3dc4] mt-1 group-hover:scale-105 transition-transform">{counts.approved}</p>
                     </div>
-                    <div className="p-2 bg-green-100 rounded-full">
-                      <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
+              <div className="p-3 rounded-xl bg-[#e6e0f7] text-[#5f3dc4]">
+                <CheckCircle className="h-6 w-6" />
                     </div>
                   </div>
-                </CardHeader>
-              </Card>
-              
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all duration-200 hover:shadow-xl border-l-4",
-                  "transform hover:-translate-y-1 hover:bg-red-50/50",
-                  "border-l-red-500"
-                )}
-                onClick={() => setActiveTab('rejected')}
-              >
-                <CardHeader className="p-2.5">
-                  <div className="flex items-center justify-between">
+
+            {/* Rejected Stats */}
+            <div className="group bg-white rounded-xl px-6 py-4 flex items-center justify-between shadow-md hover:shadow-lg transition-all duration-200 border border-[#e6e0f7]">
                     <div>
-                      <CardTitle className="text-xl lg:text-2xl font-bold text-red-600">{counts.rejected}</CardTitle>
-                      <CardDescription className="text-sm font-medium">Rejected</CardDescription>
+                <p className="text-sm text-gray-600">Rejected</p>
+                <p className="font-bold text-2xl text-red-600 mt-1 group-hover:scale-105 transition-transform">{counts.rejected}</p>
                     </div>
-                    <div className="p-2 bg-red-100 rounded-full">
-                      <XCircle className="h-4 w-4 lg:h-5 lg:w-5 text-red-600" />
+              <div className="p-3 rounded-xl bg-red-50 text-red-600">
+                <XCircle className="h-6 w-6" />
                     </div>
                   </div>
-                </CardHeader>
-              </Card>
-              
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all duration-200 hover:shadow-xl border-l-4",
-                  "transform hover:-translate-y-1 hover:bg-yellow-50/50",
-                  "border-l-yellow-500"
-                )}
-                onClick={() => setActiveTab('pending')}
-              >
-                <CardHeader className="p-2.5">
-                  <div className="flex items-center justify-between">
+
+            {/* Pending Stats */}
+            <div className="group bg-white rounded-xl px-6 py-4 flex items-center justify-between shadow-md hover:shadow-lg transition-all duration-200 border border-[#e6e0f7]">
                     <div>
-                      <CardTitle className="text-xl lg:text-2xl font-bold text-yellow-600">{counts.pending}</CardTitle>
-                      <CardDescription className="text-sm font-medium">Pending</CardDescription>
+                <p className="text-sm text-gray-600">Pending</p>
+                <p className="font-bold text-2xl text-yellow-600 mt-1 group-hover:scale-105 transition-transform">{counts.pending}</p>
                     </div>
-                    <div className="p-2 bg-yellow-100 rounded-full">
-                      <AlertCircle className="h-4 w-4 lg:h-5 lg:w-5 text-yellow-600" />
+              <div className="p-3 rounded-xl bg-yellow-50 text-yellow-600">
+                <AlertCircle className="h-6 w-6" />
                     </div>
                   </div>
-                </CardHeader>
-              </Card>
-              
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all duration-200 hover:shadow-xl border-l-4",
-                  "transform hover:-translate-y-1 hover:bg-slate-50/50",
-                  "border-l-slate-500"
-                )}
-                onClick={() => setActiveTab('deleted')}
-              >
-                <CardHeader className="p-2.5">
-                  <div className="flex items-center justify-between">
+
+            {/* Deleted Stats */}
+            <div className="group bg-white rounded-xl px-6 py-4 flex items-center justify-between shadow-md hover:shadow-lg transition-all duration-200 border border-[#e6e0f7]">
                     <div>
-                      <CardTitle className="text-xl lg:text-2xl font-bold text-slate-600">{counts.deleted}</CardTitle>
-                      <CardDescription className="text-sm font-medium">Deleted</CardDescription>
+                <p className="text-sm text-gray-600">Deleted</p>
+                <p className="font-bold text-2xl text-gray-600 mt-1 group-hover:scale-105 transition-transform">{counts.deleted}</p>
                     </div>
-                    <div className="p-2 bg-slate-100 rounded-full">
-                      <Trash2 className="h-4 w-4 lg:h-5 lg:w-5 text-slate-600" />
+              <div className="p-3 rounded-xl bg-gray-50 text-gray-600">
+                <Trash2 className="h-6 w-6" />
                     </div>
-                  </div>
-                </CardHeader>
-              </Card>
             </div>
         </div>
 
-          {/* Main Content - Scrollable */}
-          <div className="flex-1 min-h-0 px-2 pb-2 lg:px-4 lg:pb-4">
-            <Card className="h-full flex flex-col overflow-hidden shadow-lg border-t-4 border-t-primary">
-              <CardHeader className="border-b bg-muted/40 p-2 lg:p-3 flex-none">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                  <div className="flex items-center gap-4">
+          {/* Main Content */}
+          <div className="bg-white rounded-xl shadow-md border border-[#e6e0f7]">
+            {/* Filters Section */}
+            <div className="p-6 border-b border-[#e6e0f7] bg-[#e6e0f7]/10 space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-center gap-2">
                     <Button
                       variant={isSelectionMode ? "secondary" : "ghost"}
                       size="sm"
                       onClick={toggleSelectionMode}
-                      className="gap-2"
+                    className="gap-2 hover:bg-[#e6e0f7]"
                     >
                       <CheckSquare className={cn(
                         "h-4 w-4",
-                        isSelectionMode ? "text-primary" : "text-muted-foreground"
+                      isSelectionMode ? "text-[#5f3dc4]" : "text-gray-500"
                       )} />
                       {isSelectionMode ? "Cancel Selection" : "Select"}
                     </Button>
@@ -589,73 +563,83 @@ const EnrollmentRequests = () => {
                       </Button>
                     )}
                   </div>
-                  <div className="relative w-full md:w-72 group">
-                    <div className="absolute inset-0 bg-primary/10 rounded-lg -m-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" />
-                    <div className="relative flex items-center">
-                      <Search className="absolute left-3 h-4 w-4 text-muted-foreground/70 group-hover:text-primary group-focus-within:text-primary transition-colors" />
+                <div className="relative w-full md:w-80">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
                       <Input 
                         placeholder="Search by email, course, or Transaction ID..." 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 pr-12 h-10 bg-white/50 hover:bg-white focus:bg-white transition-colors border-muted-foreground/20 hover:border-primary/50 focus:border-primary"
+                    className="pl-10 pr-10 h-9 bg-white border-[#e6e0f7] focus:ring-2 focus:ring-[#e6e0f7] focus:border-[#5f3dc4] rounded-lg"
                       />
                       {searchTerm && (
                         <button
                           onClick={() => setSearchTerm('')}
-                          className="absolute right-3 p-1 hover:bg-muted rounded-full text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                         >
                           <X className="h-4 w-4" />
                         </button>
                       )}
                     </div>
-                    {searchTerm && (
-                      <div className="absolute right-3 -top-1 -translate-y-full">
-                        <Badge variant="secondary" className="text-xs font-normal px-2 py-0">
-                          {filteredRequests.length} results
-                        </Badge>
                       </div>
-                    )}
-                  </div>
-                </div>
-          </CardHeader>
 
-              <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
-                <div className="p-2 lg:p-3 border-b flex-none">
-                  <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
-                    <TabsList className="grid w-full grid-cols-5 rounded-lg bg-muted p-1 h-8 lg:h-9">
-                      <TabsTrigger value="all" className="text-xs lg:text-sm rounded-md">
+              {/* Tabs */}
+              <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="w-full">
+                <TabsList className="w-full flex bg-white p-1 gap-1 h-10 rounded-lg border border-[#e6e0f7] shadow-sm">
+                  <TabsTrigger 
+                    value="all" 
+                    className="flex-1 data-[state=active]:bg-[#e6e0f7] data-[state=active]:text-[#5f3dc4] data-[state=active]:shadow-sm rounded-md text-sm font-medium"
+                  >
                         All Requests
                       </TabsTrigger>
-                      <TabsTrigger value="pending" className="text-xs lg:text-sm text-yellow-600 rounded-md">
+                  <TabsTrigger 
+                    value="pending" 
+                    className="flex-1 data-[state=active]:bg-[#e6e0f7] data-[state=active]:text-[#5f3dc4] data-[state=active]:shadow-sm rounded-md text-sm font-medium text-yellow-600"
+                  >
                         Pending ({counts.pending})
                       </TabsTrigger>
-                      <TabsTrigger value="approved" className="text-xs lg:text-sm text-green-600 rounded-md">
+                  <TabsTrigger 
+                    value="approved" 
+                    className="flex-1 data-[state=active]:bg-[#e6e0f7] data-[state=active]:text-[#5f3dc4] data-[state=active]:shadow-sm rounded-md text-sm font-medium text-[#5f3dc4]"
+                  >
                         Approved ({counts.approved})
                       </TabsTrigger>
-                      <TabsTrigger value="rejected" className="text-xs lg:text-sm text-red-600 rounded-md">
+                  <TabsTrigger 
+                    value="rejected" 
+                    className="flex-1 data-[state=active]:bg-[#e6e0f7] data-[state=active]:text-[#5f3dc4] data-[state=active]:shadow-sm rounded-md text-sm font-medium text-red-600"
+                  >
                         Rejected ({counts.rejected})
                       </TabsTrigger>
-                      <TabsTrigger value="deleted" className="text-xs lg:text-sm text-slate-600 rounded-md">
+                  <TabsTrigger 
+                    value="deleted" 
+                    className="flex-1 data-[state=active]:bg-[#e6e0f7] data-[state=active]:text-[#5f3dc4] data-[state=active]:shadow-sm rounded-md text-sm font-medium text-gray-600"
+                  >
                         Deleted ({counts.deleted})
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
 
-                <div className="flex-1 overflow-auto">
+            {/* Table Section */}
+            <div className="p-6">
             {isLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="animate-spin rounded-full h-8 w-8 border-3 border-primary border-t-transparent"></div>
-                        <p className="text-sm text-muted-foreground animate-pulse">Loading requests...</p>
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] opacity-25"></div>
+                      <div className="h-12 w-12 rounded-full border-4 border-[#e6e0f7] border-r-[#5f3dc4] animate-spin"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] border-l-[#5f3dc4] animate-spin-reverse [animation-delay:-0.2s]"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] border-t-[#5f3dc4] animate-spin [animation-delay:-0.4s]"></div>
+                    </div>
+                    <p className="text-sm text-gray-500 animate-pulse">Loading requests...</p>
                       </div>
                     </div>
                   ) : filteredRequests.length > 0 ? (
-                    <div className="h-full">
-                      <div className="relative min-h-full overflow-auto">
+                <div className="rounded-xl border border-[#e6e0f7] overflow-hidden shadow-sm">
               <Table>
-                          <TableHeader className="sticky top-0 z-10 bg-white border-b">
-                            <TableRow className="hover:bg-transparent">
+                    <TableHeader className="bg-[#e6e0f7]/10">
+                      <TableRow className="hover:bg-transparent border-none">
                               {isSelectionMode && (
                                 <TableHead className="w-[50px]">
                                   <Checkbox 
@@ -667,47 +651,44 @@ const EnrollmentRequests = () => {
                                   />
                                 </TableHead>
                               )}
-                              <TableHead className="w-[60px] font-medium">
+                        <TableHead className="w-[60px] font-medium text-gray-600">
                                 <div className="flex items-center gap-2">
                                   S.No
                                 </div>
                               </TableHead>
-                              <TableHead className="w-[180px] font-medium">
+                        <TableHead className="w-[180px] font-medium text-gray-600">
                                 <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-primary" />
+                            <Calendar className="h-4 w-4 text-[#5f3dc4]" />
                                   Date
                                 </div>
                               </TableHead>
-                              <TableHead className="w-[300px]">
+                        <TableHead className="w-[300px] font-medium text-gray-600">
                                 <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-primary" />
+                            <User className="h-4 w-4 text-[#5f3dc4]" />
                                   Student Details
                                 </div>
                               </TableHead>
-                              <TableHead className="w-[150px]">
+                        <TableHead className="w-[150px] font-medium text-gray-600">
                                 <div className="flex items-center gap-2">
-                                  <BookOpen className="h-4 w-4 text-primary" />
+                            <BookOpen className="h-4 w-4 text-[#5f3dc4]" />
                                   Course
                                 </div>
                               </TableHead>
-                              <TableHead className="w-[150px]">
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className="h-4 w-4 text-primary" />
-                                  Transaction ID
-                                </div>
-                              </TableHead>
-                              <TableHead className="w-[120px]">Status</TableHead>
-                              <TableHead className="w-[120px]">Screenshot</TableHead>
-                              <TableHead className="w-[150px]">Referred By</TableHead>
-                              <TableHead className="w-[100px]">Actions</TableHead>
+                        <TableHead className="font-medium text-gray-600">Transaction ID</TableHead>
+                        <TableHead className="font-medium text-gray-600">Status</TableHead>
+                        <TableHead className="font-medium text-gray-600">Referred By</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                             {filteredRequests.map((request, index) => (
-                              <TableRow key={request._id} className={cn(
-                                  "hover:bg-muted/50 transition-colors",
-                                  selectedRequests.includes(request._id) && "bg-muted/30"
-                              )}>
+                        <TableRow 
+                          key={request._id} 
+                          className={cn(
+                            "hover:bg-[#e6e0f7]/20 transition-colors border-[#e6e0f7]",
+                            selectedRequests.includes(request._id) && "bg-[#e6e0f7]/30"
+                          )}
+                        >
                                 {isSelectionMode && (
                                   <TableCell className="py-3">
                                     <Checkbox 
@@ -716,7 +697,7 @@ const EnrollmentRequests = () => {
                                     />
                                   </TableCell>
                                 )}
-                                <TableCell className="py-3 text-center font-medium text-muted-foreground">
+                          <TableCell className="py-3 text-center font-medium text-gray-600">
                                   {index + 1}
                                 </TableCell>
                                 <TableCell className="py-3 align-top">
@@ -726,14 +707,14 @@ const EnrollmentRequests = () => {
                                   <div className="flex flex-col gap-0.5">
                                     <span className={cn(
                                       "font-medium text-sm",
-                                      !request.userId?.name && "text-muted-foreground italic"
+                                !request.userId?.name && "text-gray-500 italic"
                                     )}>
                                       {request.userId?.name || 'User not found'}
                                     </span>
-                                    <div className="flex flex-col text-xs text-muted-foreground">
+                              <div className="flex flex-col text-xs text-gray-500">
                                       <span className="flex items-center gap-1.5">
                                         <Hash className="h-3 w-3" />
-                                        <Badge variant="outline" className="font-mono text-[10px] h-4">
+                                  <Badge variant="outline" className="font-mono text-[10px] h-4 border-[#e6e0f7] bg-[#e6e0f7]/10">
                                           {request.userId?.userId || 'N/A'}
                                         </Badge>
                                       </span>
@@ -754,49 +735,51 @@ const EnrollmentRequests = () => {
                                 <TableCell className="py-3">{request.transactionId}</TableCell>
                                 <TableCell className="py-3">{getStatusBadge(request.status)}</TableCell>
                                 <TableCell className="py-3">
-                        <Button 
+                            <Badge 
                           variant="outline" 
-                          size="sm" 
-                          onClick={() => handleViewScreenshot(request)}
-                                    className="gap-2 hover:bg-primary hover:text-white transition-colors whitespace-nowrap"
-                        >
-                                    <Eye className="h-4 w-4" />
-                          View
-                        </Button>
-                      </TableCell>
-                                <TableCell className="py-3">
-                                  <Badge variant="outline" className="font-medium">
+                              className={cn(
+                                "font-medium bg-[#e6e0f7]/10 border-[#e6e0f7]",
+                                !request.referredBy && "text-gray-400 italic"
+                              )}
+                            >
                                     {request.referredBy || 'No Referral'}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="py-3">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                        <MoreHorizontal className="h-4 w-4" />
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 hover:bg-[#e6e0f7]"
+                                >
+                                  <MoreHorizontal className="h-4 w-4 text-gray-500" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
+                              <DropdownMenuContent 
+                                align="end"
+                                className="w-48 bg-white border border-[#e6e0f7] shadow-lg rounded-xl"
+                              >
                                       <DropdownMenuItem
                                         onClick={() => handleViewScreenshot(request)}
-                                        className="gap-2"
+                                  className="gap-2 text-gray-600 hover:text-[#5f3dc4] hover:bg-[#e6e0f7]/50 rounded-lg"
                                       >
-                                        <Eye className="h-4 w-4" />
+                                  <Image className="h-4 w-4" />
                                         View Screenshot
                                       </DropdownMenuItem>
                                       {activeTab === 'deleted' ? (
                                         <>
                                           <DropdownMenuItem
                                             onClick={() => restoreMutation.mutate([request._id])}
-                                            className="gap-2 text-green-600"
+                                      className="gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg"
                                           >
                                             <RefreshCcw className="h-4 w-4" />
                                             Restore Request
                                           </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator className="bg-[#e6e0f7]" />
                                           <DropdownMenuItem
                                             onClick={() => handleDelete([request._id])}
-                                            className="gap-2 text-red-600"
+                                      className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
                                           >
                                             <Trash2 className="h-4 w-4" />
                                             Permanently Delete
@@ -808,24 +791,24 @@ const EnrollmentRequests = () => {
                                         <>
                                           <DropdownMenuItem
                               onClick={() => handleApprove(request)}
-                                            className="gap-2"
+                                          className="gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg"
                             >
                                             <CheckCircle className="h-4 w-4" />
                               Approve
                                           </DropdownMenuItem>
                                           <DropdownMenuItem
                               onClick={() => handleReject(request)}
-                                            className="gap-2"
+                                          className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
                             >
                                             <XCircle className="h-4 w-4" />
                               Reject
                                           </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
+                                        <DropdownMenuSeparator className="bg-[#e6e0f7]" />
                                         </>
                         )}
                                       <DropdownMenuItem
                                         onClick={() => handleDelete([request._id])}
-                                        className="gap-2 text-red-600"
+                                      className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
                                       >
                                         <Trash2 className="h-4 w-4" />
                                             Delete
@@ -839,116 +822,105 @@ const EnrollmentRequests = () => {
                   ))}
                 </TableBody>
               </Table>
-                        <div className="sticky bottom-0 py-2 px-3 text-sm text-muted-foreground bg-white border-t">
-                          {isSelectionMode ? (
-                            <span>
-                              {selectedRequests.length} of {filteredRequests.length} selected
-                            </span>
-                          ) : (
-                            <span>
-                              Showing {filteredRequests.length} requests
-                            </span>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="flex flex-col items-center gap-2 text-center p-4">
-                        <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm font-medium text-muted-foreground">
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3 text-center max-w-sm mx-auto">
+                    <div className="w-16 h-16 rounded-lg bg-[#e6e0f7] flex items-center justify-center">
+                      <AlertCircle className="h-8 w-8 text-[#5f3dc4]" />
+                    </div>
+                    <p className="text-base font-medium text-gray-900">
                           {activeTab === 'all' 
                             ? 'No enrollment requests found'
                             : `No ${activeTab} enrollment requests found`}
                         </p>
                         {searchTerm && (
-                          <p className="text-xs text-muted-foreground">
-                            Try adjusting your search term
+                      <p className="text-sm text-gray-500">
+                        Try adjusting your search term or clearing filters
                           </p>
                         )}
                       </div>
                     </div>
             )}
                 </div>
-          </CardContent>
-        </Card>
           </div>
         </div>
       
         {/* Image Dialog */}
         <Dialog open={viewImageOpen} onOpenChange={setViewImageOpen}>
-          <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col overflow-hidden">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Image className="h-5 w-5" />
+          <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0 rounded-xl bg-white shadow-xl border border-[#e6e0f7]">
+            <DialogHeader className="p-6 border-b border-[#e6e0f7] bg-[#e6e0f7]/10">
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Image className="h-5 w-5 text-[#5f3dc4]" />
                 Transaction Screenshot
               </DialogTitle>
-              <DialogDescription>
-                {selectedRequest?.email} - {selectedRequest?.courseName}
+              <DialogDescription className="text-gray-500 flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[#5f3dc4]" />
+                  {selectedRequest?.email}
+                </div>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-[#5f3dc4]" />
+                  {selectedRequest?.courseName}
+                </div>
               </DialogDescription>
             </DialogHeader>
             {selectedRequest && (
-              <div className="mt-4 flex flex-col items-center space-y-4">
-                <div className="relative w-full min-h-[300px] bg-slate-50 rounded-lg overflow-hidden">
+              <div className="flex-1 overflow-auto p-6 bg-[#e6e0f7]/10">
+                <div className="relative w-full min-h-[400px] bg-white rounded-xl overflow-hidden shadow-md border border-[#e6e0f7]">
                   {(!imageUrl || isRetrying) && !imageError && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-8 h-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] opacity-25"></div>
+                          <div className="h-12 w-12 rounded-full border-4 border-[#e6e0f7] border-r-[#5f3dc4] animate-spin"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] border-l-[#5f3dc4] animate-spin-reverse [animation-delay:-0.2s]"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-[#e6e0f7] border-t-[#5f3dc4] animate-spin [animation-delay:-0.4s]"></div>
+                        </div>
+                        <p className="text-sm text-gray-500">Loading image...</p>
+                      </div>
                     </div>
                   )}
-                  
                   {imageError ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-red-500">
-                      <AlertCircle className="h-8 w-8 mb-2" />
-                      <p className="text-sm">Failed to load image</p>
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                      <div className="flex flex-col items-center gap-4 p-6 text-center max-w-sm">
+                        <div className="w-16 h-16 rounded-lg bg-red-50 flex items-center justify-center">
+                          <AlertCircle className="h-8 w-8 text-red-500" />
+                        </div>
+                        <div>
+                          <p className="text-base font-medium text-gray-900">Failed to load image</p>
+                          <p className="text-sm text-gray-500 mt-1">The image might be unavailable or there was an error loading it.</p>
+                        </div>
                       <Button
-                        variant="outline"
-                        size="sm"
                         onClick={handleRetryImage}
-                        className="mt-2 gap-2"
-                      >
-                        <RefreshCcw className="h-4 w-4" />
+                          disabled={isRetrying}
+                          variant="outline"
+                          className="mt-2 border-[#e6e0f7] hover:bg-[#e6e0f7]/50 text-[#5f3dc4]"
+                        >
+                          {isRetrying ? (
+                            <>
+                              <div className="w-4 h-4 animate-spin rounded-full border-2 border-[#5f3dc4] border-t-transparent mr-2" />
+                              Retrying...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCcw className="w-4 h-4 mr-2" />
                         Retry
+                            </>
+                          )}
                       </Button>
+                      </div>
                     </div>
                   ) : (
                     imageUrl && (
                       <img 
                         src={imageUrl}
                         alt="Transaction Screenshot" 
-                        className="max-h-[80vh] w-full object-contain rounded shadow-lg" 
+                        className="w-full h-auto object-contain"
                         onError={() => setImageError(true)}
                       />
                     )
                   )}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (imageUrl) {
-                        const link = document.createElement('a');
-                        link.href = imageUrl;
-                        link.download = `payment-${selectedRequest.email}-${new Date().toISOString()}.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }
-                    }}
-                    disabled={!imageUrl || imageError}
-                    className="gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download Screenshot
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(imageUrl, '_blank')}
-                    disabled={!imageUrl || imageError}
-                    className="gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open in New Tab
-                  </Button>
                 </div>
               </div>
             )}

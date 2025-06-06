@@ -336,11 +336,22 @@ const Profile = () => {
     try {
       // Update avatar in the backend using the configured axios instance
       const response = await axios.put('/api/users/profile', {
-        avatar: newAvatarUrl
+        avatar: newAvatarUrl,
+        avatarUrl: newAvatarUrl
       });
       
       // Update local state
       setAvatarUrl(newAvatarUrl);
+      
+      // Update user profile with both fields
+      if (userProfile) {
+        const updatedProfile = {
+          ...userProfile,
+          avatar: newAvatarUrl,
+          avatarUrl: newAvatarUrl
+        };
+        queryClient.setQueryData(['user-profile'], { data: updatedProfile });
+      }
       
       // Invalidate the user profile query to refresh the data
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
@@ -423,7 +434,7 @@ const Profile = () => {
                 {/* Avatar Section */}
                 <div className="relative group">
                   <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-                    <AvatarImage src={userData.avatar} />
+                    <AvatarImage src={avatarUrl} />
                     <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <Dialog>
@@ -441,7 +452,7 @@ const Profile = () => {
                       </DialogHeader>
                       <AvatarSelector
                         username={userData.name}
-                        currentAvatar={userData.avatar}
+                        currentAvatar={avatarUrl}
                         onSelect={handleAvatarChange}
                       />
                     </DialogContent>

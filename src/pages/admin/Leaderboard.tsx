@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import DashboardLayout from "../../components/layouts/DashboardLayout";
+import React from 'react';
+import AdminLayout from "@/components/layouts/AdminLayout";
+import { useLeaderboard, LeaderboardMetrics } from "@/services/leaderboardService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useLeaderboard, LeaderboardMetrics } from "@/services/leaderboardService";
 import { AvatarSelector } from "@/components/ui/avatar-selector";
 import {
   Table,
@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Helper functions
+// Reuse all the helper functions and components from the original Leaderboard
 const getProgressColor = (points: number) => {
   if (points >= 90) return "bg-green-500";
   if (points >= 70) return "bg-blue-500";
@@ -42,7 +42,7 @@ const getDefaultAvatarUrl = (name: string) => {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
 };
 
-// Animated Crown Component
+// Reuse the AnimatedCrown component
 const AnimatedCrown = ({ position }: { position: number }) => {
   const colorByPosition = {
     1: "text-yellow-500",
@@ -77,7 +77,7 @@ const AnimatedCrown = ({ position }: { position: number }) => {
   );
 };
 
-// Podium Card Component
+// Reuse the PodiumCard component
 const PodiumCard = ({ 
   student, 
   position,
@@ -88,9 +88,9 @@ const PodiumCard = ({
   onAvatarChange?: (newAvatarUrl: string) => Promise<void>;
 }) => {
   const heightByRank = {
-    1: "h-[420px]",
-    2: "h-[370px]",
-    3: "h-[370px]"
+    1: "h-[380px]",
+    2: "h-[340px]",
+    3: "h-[300px]"
   };
 
   const colorByRank = {
@@ -153,7 +153,7 @@ const PodiumCard = ({
       )}
 
       {/* Avatar Section */}
-      <div className="relative z-20 -mb-12">
+      <div className="relative z-20 -mb-8">
         <div className="relative">
           {onAvatarChange ? (
             <AvatarSelector
@@ -161,13 +161,13 @@ const PodiumCard = ({
               name={student.name}
               onAvatarChange={onAvatarChange}
               className={cn(
-                "h-24 w-24 ring-4 ring-opacity-60 shadow-xl transform transition-transform hover:scale-105",
+                "h-20 w-20 ring-4 ring-opacity-60 shadow-xl transform transition-transform hover:scale-105",
                 colorByRank[position].ring
               )}
             />
           ) : (
             <Avatar className={cn(
-              "h-24 w-24 ring-4 ring-opacity-60 shadow-xl",
+              "h-20 w-20 ring-4 ring-opacity-60 shadow-xl",
               colorByRank[position].ring
             )}>
               <AvatarImage 
@@ -193,7 +193,7 @@ const PodiumCard = ({
       <motion.div 
         whileHover={{ y: -5 }}
         className={cn(
-          "w-[220px] relative rounded-2xl bg-gray-800/90 shadow-xl border border-opacity-30 backdrop-blur-sm",
+          "w-[220px] relative rounded-2xl bg-gray-800/90 shadow-xl border border-opacity-30 backdrop-blur-sm overflow-hidden",
           heightByRank[position],
           colorByRank[position].border,
           colorByRank[position].glow
@@ -201,28 +201,28 @@ const PodiumCard = ({
       >
         {/* Top colored section */}
         <div className={cn(
-          "h-20 rounded-t-2xl bg-gradient-to-b",
+          "h-16 rounded-t-2xl bg-gradient-to-b",
           colorByRank[position].bg
         )} />
 
         {/* Content */}
-        <div className="p-4 text-center mt-6">
-          <div className="font-semibold text-gray-100 mb-1 text-sm leading-tight min-h-[40px] flex items-center justify-center">
-            <span className="break-words hyphens-auto px-1">
+        <div className="p-4 text-center mt-2">
+          <div className="font-semibold text-gray-100 mb-1 text-sm leading-tight min-h-[32px] flex items-center justify-center">
+            <span className="break-words hyphens-auto px-1 line-clamp-2">
               {student.name}
             </span>
           </div>
-          <div className="text-xs text-gray-300 font-mono mb-6">
+          <div className="text-xs text-gray-300 font-mono mb-3">
             @{student.userId}
           </div>
 
           {/* Total Points */}
-          <div className={cn("text-3xl font-bold mb-6", colorByRank[position].score)}>
+          <div className={cn("text-3xl font-bold mb-3", colorByRank[position].score)}>
             {student.metrics.totalPoints}
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <div className="bg-gray-700/50 rounded-xl p-2 backdrop-blur-sm">
               <div className={cn("text-lg font-semibold", colorByRank[position].text)}>
                 {student.metrics.coursePoints}
@@ -246,97 +246,52 @@ const PodiumCard = ({
   );
 };
 
-interface CourseResponse {
+interface Course {
   _id: string;
-  title: string;
   courseUrl: string;
+  title: string;
 }
 
-interface ExtendedUser {
-  id: string;
-  name: string;
-  avatar: string;
-}
-
-interface AuthContextType {
-  user: ExtendedUser | null;
-  updateUser: (user: ExtendedUser) => void;
-}
-
-interface LeaderboardMetricsWithCourses extends LeaderboardMetrics {
-  metrics: {
-    coursesEnrolled: number;
-    coursePoints: number;
-    quizPoints: number;
-    totalPoints: number;
-    enrolledCourses: string[];
-  };
-}
-
-interface UserCourseEnrollment {
-  _id: string;
+interface UserCourse {
   userId: string;
-  courseId: string;
-  progress?: number;
-  daysCompletedPerDuration?: string;
-  status?: string;
+  daysCompletedPerDuration: string;
 }
 
 interface QuizSubmission {
   userId: string;
-  courseUrl: string;
-  dayNumber: number;
-  score: number;
-  submittedDate: string;
-  isCompleted: boolean;
+  averageScore: number;
 }
 
-interface QuizAttempt {
-  dayNumber: number;
-  score: number;
-  completedAt: Date;
-  totalQuestions: number;
-  attemptNumber: number;
-  isCompleted: boolean;
-}
-
-interface UserResponse {
+interface UserDetails {
   _id: string;
   userId: string;
   name: string;
   avatar?: string;
 }
 
-type EnrolledStudent = {
-  userId: string;
-  name: string;
-  avatar: string;
-  rank: number;
-  metrics: {
-    coursesEnrolled: number;
-    coursePoints: number;
-    quizPoints: number;
-    totalPoints: number;
-    enrolledCourses: string[];
-  };
-};
+interface QuizResponse {
+  data: QuizSubmission[];
+}
 
-const Leaderboard = () => {
+interface LeaderboardData {
+  rankings: LeaderboardMetrics[];
+  currentUserRank: number;
+}
+
+const AdminLeaderboard = () => {
   const auth = useAuth();
-  const { user, updateUser } = auth as unknown as AuthContextType;
+  const { user, updateUser } = auth as any;
   const { data: leaderboardData, isLoading, error } = useLeaderboard();
   const { toast } = useToast();
-  const [courses, setCourses] = useState<CourseResponse[]>([]);
-  const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [courses, setCourses] = React.useState<Course[]>([]);
+  const [enrolledStudents, setEnrolledStudents] = React.useState<LeaderboardMetrics[]>([]);
+  const [selectedCourse, setSelectedCourse] = React.useState<string>("");
 
-  // Fetch courses and set default selection
   React.useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get<CourseResponse[]>('/api/courses');
+        const response = await axios.get<Course[]>('/api/courses');
         setCourses(response.data);
-        // Set the first course as default selection
         if (response.data.length > 0) {
           setSelectedCourse(response.data[0].courseUrl);
           fetchEnrolledStudents(response.data[0].courseUrl);
@@ -354,13 +309,11 @@ const Leaderboard = () => {
     fetchCourses();
   }, [toast]);
 
-  // Fetch enrolled students
   const fetchEnrolledStudents = React.useCallback(async (courseUrl: string) => {
     try {
       console.log('Fetching enrolled students for course:', courseUrl);
       
-      // First get the course details to get the courseId
-      const courseResponse = await axios.get<CourseResponse>(`/api/courses/url/${courseUrl}`);
+      const courseResponse = await axios.get<Course>(`/api/courses/url/${courseUrl}`);
       const course = courseResponse.data;
       
       if (!course || !course._id) {
@@ -370,8 +323,7 @@ const Leaderboard = () => {
 
       console.log('Found course:', course);
 
-      // Get enrollments using courseId
-      const enrollmentsResponse = await axios.get<UserCourseEnrollment[]>(`/api/usercourses/course/${course._id}`);
+      const enrollmentsResponse = await axios.get<UserCourse[]>(`/api/usercourses/course/${course._id}`);
       
       console.log('Found enrollments:', enrollmentsResponse.data);
 
@@ -381,26 +333,22 @@ const Leaderboard = () => {
         return;
       }
 
-      // Get user IDs from enrollments
       const userIds = enrollmentsResponse.data.map(enrollment => enrollment.userId);
       console.log('Found enrolled user IDs:', userIds);
 
-      // Fetch quiz submissions for the course
-      const { data: quizResponse } = await axios.get<{ data: { userId: string; averageScore: number }[] }>(`/api/quiz-submissions/${courseUrl}`);
+      const { data: quizResponse } = await axios.get<QuizResponse>(`/api/quiz-submissions/${courseUrl}`);
       const userQuizScores = new Map(
         quizResponse.data.map(item => [item.userId, item.averageScore])
       );
       console.log('Found quiz scores:', userQuizScores);
 
-      // Fetch user details one by one with userId field
       const userDetailsPromises = userIds.map(async (userId) => {
         try {
-          const userResponse = await axios.get<UserResponse>(`/api/users/${userId}`);
-          // If the user document doesn't have a userId field, use their _id
+          const userResponse = await axios.get<UserDetails>(`/api/users/${userId}`);
           const userData = userResponse.data;
           return {
             ...userData,
-            userId: userData.userId || userData._id // Fallback to _id if userId is not present
+            userId: userData.userId || userData._id
           };
         } catch (error) {
           console.error(`Failed to fetch user details for userId ${userId}:`, error);
@@ -409,11 +357,10 @@ const Leaderboard = () => {
       });
 
       const userDetails = await Promise.all(userDetailsPromises);
-      const validUserDetails = userDetails.filter((user): user is UserResponse => user !== null);
+      const validUserDetails = userDetails.filter((user): user is UserDetails => user !== null);
       console.log('Fetched user details:', validUserDetails);
 
-      // Map user details to enrolled students format
-      const students: EnrolledStudent[] = validUserDetails.map((user) => {
+      const students = validUserDetails.map((user) => {
         const enrollment = enrollmentsResponse.data.find(e => e.userId === user._id);
         const [completedDays, totalDays] = (enrollment?.daysCompletedPerDuration || '0/0').split('/').map(Number);
         const coursePoints = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
@@ -421,10 +368,10 @@ const Leaderboard = () => {
         const studentTotalPoints = coursePoints + quizPoints;
 
         return {
-          userId: user.userId, // Use the userId from the user document
+          userId: user.userId,
           name: user.name,
           avatar: user.avatar || getDefaultAvatarUrl(user.name),
-          rank: 0, // Will be updated after sorting
+          rank: 0,
           metrics: {
             coursesEnrolled: 1,
             coursePoints: coursePoints,
@@ -435,10 +382,8 @@ const Leaderboard = () => {
         };
       });
 
-      // Sort students by total points (course points + quiz points)
       students.sort((a, b) => b.metrics.totalPoints - a.metrics.totalPoints);
       
-      // Update ranks after sorting
       students.forEach((student, index) => {
         student.rank = index + 1;
       });
@@ -456,7 +401,6 @@ const Leaderboard = () => {
     }
   }, [toast]);
 
-  // Handle course selection
   const handleCourseChange = async (value: string) => {
     console.log('Course selection changed to:', value);
     setSelectedCourse(value);
@@ -469,77 +413,18 @@ const Leaderboard = () => {
     await fetchEnrolledStudents(value);
   };
 
-  // Display rankings based on selection
   const displayedRankings = React.useMemo(() => {
     if (selectedCourse === "all") {
-      return leaderboardData?.rankings || [];
+      return (leaderboardData as LeaderboardData)?.rankings || [];
     }
     return enrolledStudents;
-  }, [selectedCourse, enrolledStudents, leaderboardData?.rankings]);
+  }, [selectedCourse, enrolledStudents, leaderboardData]);
 
-  // Get top 3 from rankings
   const topThree = displayedRankings.slice(0, 3);
-
-  const handleAvatarChange = async (newAvatarUrl: string) => {
-    if (!user) return;
-    
-    try {
-      const response = await axios.put<{ user: ExtendedUser }>('/api/users/avatar', { avatar: newAvatarUrl });
-      updateUser({
-        ...user,
-        avatar: response.data.user.avatar
-      });
-      toast({
-        title: "Avatar Updated",
-        description: "Your avatar has been successfully updated.",
-      });
-    } catch (error) {
-      console.error('Failed to update avatar:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update avatar. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase();
-  };
-
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return <Trophy className="h-6 w-6 text-yellow-500" />;
-      case 2:
-        return <Medal className="h-6 w-6 text-gray-400" />;
-      case 3:
-        return <Medal className="h-6 w-6 text-amber-600" />;
-      default:
-        return null;
-    }
-  };
-
-  const getRankBadgeStyle = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "bg-yellow-500 text-white";
-      case 2:
-        return "bg-gray-500 text-white";
-      case 3:
-        return "bg-amber-500 text-white";
-      default:
-        return "bg-primary/10 text-primary";
-    }
-  };
 
   if (isLoading) {
     return (
-      <DashboardLayout>
+      <AdminLayout>
         <div className="p-6">
           <Card>
             <CardContent className="p-8">
@@ -557,13 +442,13 @@ const Leaderboard = () => {
             </CardContent>
           </Card>
         </div>
-      </DashboardLayout>
+      </AdminLayout>
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout>
+      <AdminLayout>
         <div className="p-6">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-8 text-center">
@@ -571,70 +456,108 @@ const Leaderboard = () => {
             </CardContent>
           </Card>
         </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!leaderboardData?.rankings?.length) {
-    return (
-      <DashboardLayout>
-        <div className="p-6">
-          <Card className="border-gray-200 bg-gray-50">
-            <CardContent className="p-8 text-center">
-              <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <div className="text-gray-500 font-medium">No students found in the leaderboard yet.</div>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 relative z-0">
         <div className="p-6 max-w-7xl mx-auto space-y-8">
-          {/* Header with Course Selection */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-8 shadow-lg border border-purple-100/50 relative overflow-hidden z-[2]">
-            <div className="flex-1">
-              <div className="flex items-center gap-5">
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-200/50">
-                  <Trophy className="h-8 w-8 text-white" />
-                </div>
+          {/* Enhanced Header with Stats */}
+          <div className="grid gap-6">
+            {/* Main Header */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#34226C] to-[#5f3dc4] p-6 shadow-lg">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 relative z-10">
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-br from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                    Course Leaderboard
-                  </h1>
-                  <p className="text-base text-gray-600 mt-1 flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-purple-500" />
-                    <span>Track your progress and compete with fellow students</span>
+                  <h1 className="text-2xl font-semibold tracking-tight text-white">Student Leaderboard</h1>
+                  <p className="text-purple-100/80 text-sm mt-1">
+                    Track and monitor student performance across courses
                   </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="w-full sm:w-[260px]">
+                    <Select value={selectedCourse} onValueChange={handleCourseChange}>
+                      <SelectTrigger className="w-full bg-white/90 backdrop-blur-sm border-0 focus-visible:ring-2 focus-visible:ring-white/20">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4 text-[#5f3dc4]" />
+                          <SelectValue placeholder="Select a course" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel className="text-[#5f3dc4] font-semibold">Available Courses</SelectLabel>
+                          <SelectItem value="all" className="focus:bg-purple-50">All Courses</SelectItem>
+                          {courses.map(course => (
+                            <SelectItem 
+                              key={course.courseUrl} 
+                              value={course.courseUrl}
+                              className="focus:bg-purple-50"
+                            >
+                              {course.title}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="w-full md:w-[320px]">
-              <Select value={selectedCourse} onValueChange={handleCourseChange}>
-                <SelectTrigger className="w-full bg-white/80 backdrop-blur-sm border-purple-200 hover:border-purple-300 transition-colors shadow-sm text-base">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-purple-500" />
-                    <SelectValue placeholder="Select a course" />
+
+            {/* Stats Cards */}
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                  <Users className="h-4 w-4 text-[#5f3dc4]" />
+                </CardHeader>
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-[#5f3dc4]">{displayedRankings.length}</div>
+                  <p className="text-sm text-[#5f3dc4]/80">
+                    Active learners
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Top Score</CardTitle>
+                  <Trophy className="h-4 w-4 text-[#5f3dc4]" />
+                </CardHeader>
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-[#5f3dc4]">
+                    {displayedRankings[0]?.metrics.totalPoints || 0}
                   </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel className="text-purple-600 font-semibold">Available Courses</SelectLabel>
-                    {courses.map(course => (
-                      <SelectItem 
-                        key={course.courseUrl} 
-                        value={course.courseUrl} 
-                        className="focus:bg-purple-50 text-base py-3"
-                      >
-                        {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                  <p className="text-sm text-[#5f3dc4]/80">Highest achievement</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Avg. Course Score</CardTitle>
+                  <BookOpenCheck className="h-4 w-4 text-[#5f3dc4]" />
+                </CardHeader>
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-[#5f3dc4]">
+                    {Math.round(displayedRankings.reduce((acc, curr) => acc + curr.metrics.coursePoints, 0) / displayedRankings.length || 0)}
+                  </div>
+                  <p className="text-sm text-[#5f3dc4]/80">Course completion</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-[#e6e0f7] to-white border-0 shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+                  <CardTitle className="text-sm font-medium">Avg. Quiz Score</CardTitle>
+                  <Brain className="h-4 w-4 text-[#5f3dc4]" />
+                </CardHeader>
+                <CardContent className="py-3 px-4">
+                  <div className="text-2xl font-bold text-[#5f3dc4]">
+                    {Math.round(displayedRankings.reduce((acc, curr) => acc + curr.metrics.quizPoints, 0) / displayedRankings.length || 0)}
+                  </div>
+                  <p className="text-sm text-[#5f3dc4]/80">Quiz performance</p>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
@@ -644,44 +567,44 @@ const Leaderboard = () => {
             <div className="relative flex items-end justify-center gap-0 max-w-3xl mx-auto py-20 px-4">
               {/* Second Place */}
               <div className="flex-1 flex justify-end -mr-4 z-[2]">
-                {topThree[1] && <PodiumCard student={topThree[1]} position={2} onAvatarChange={topThree[1].userId === user?.id ? handleAvatarChange : undefined} />}
+                {topThree[1] && <PodiumCard student={topThree[1]} position={2} />}
               </div>
 
               {/* First Place */}
               <div className="flex-1 flex justify-center z-[3]">
-                {topThree[0] && <PodiumCard student={topThree[0]} position={1} onAvatarChange={topThree[0].userId === user?.id ? handleAvatarChange : undefined} />}
+                {topThree[0] && <PodiumCard student={topThree[0]} position={1} />}
               </div>
 
               {/* Third Place */}
               <div className="flex-1 flex justify-start -ml-4 z-[1]">
-                {topThree[2] && <PodiumCard student={topThree[2]} position={3} onAvatarChange={topThree[2].userId === user?.id ? handleAvatarChange : undefined} />}
+                {topThree[2] && <PodiumCard student={topThree[2]} position={3} />}
               </div>
             </div>
           </div>
 
-          {/* Rankings Table */}
-          <Card className="overflow-hidden border-purple-100 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl z-[1] relative">
+          {/* Enhanced Rankings Table */}
+          <Card className="overflow-hidden border-purple-100 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl">
             <CardHeader className="py-6 px-8 border-b border-purple-100/50 bg-gradient-to-r from-purple-50 via-white to-purple-50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center border border-purple-200 shadow-sm">
-                    <Users className="h-6 w-6 text-purple-600" />
+                    <BarChart3 className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
                     <CardTitle className="text-2xl font-bold text-gray-800">
                       Student Rankings
                     </CardTitle>
                     <p className="text-sm text-gray-500 mt-0.5">
-                      {courses.find(c => c.courseUrl === selectedCourse)?.title}
+                      {selectedCourse === "all" 
+                        ? "All Courses" 
+                        : courses.find(c => c.courseUrl === selectedCourse)?.title}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary" className="bg-purple-50 text-purple-600 px-3 py-1.5 text-sm font-medium shadow-sm border border-purple-200">
-                    <BarChart3 className="h-4 w-4 mr-1" />
-                    {displayedRankings.length} Students
-                  </Badge>
-                </div>
+                <Badge variant="secondary" className="bg-purple-50 text-purple-600 px-3 py-1.5 text-sm font-medium shadow-sm border border-purple-200">
+                  <Users className="h-4 w-4 mr-1" />
+                  {displayedRankings.length} Students
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -726,22 +649,18 @@ const Leaderboard = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ delay: index * 0.05 }}
-                          className={cn(
-                              "group relative border-purple-100/50",
-                              entry.userId === user?.id && "bg-purple-50/30",
-                            "hover:bg-purple-50/80 transition-all duration-200"
-                          )}
+                          className="group relative border-purple-100/50 hover:bg-purple-50/80 transition-all duration-200"
                         >
                           <TableCell className="font-medium py-3">
                             <div className="flex items-center gap-2">
                               <Badge className={cn(
-                                  "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-mono shadow-sm",
+                                "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-mono shadow-sm",
                                 entry.rank <= 3 
                                   ? entry.rank === 1 
-                                      ? "bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600 ring-1 ring-amber-200/50"
+                                    ? "bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600 ring-1 ring-amber-200/50"
                                     : entry.rank === 2
-                                        ? "bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 ring-1 ring-blue-200/50"
-                                        : "bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 ring-1 ring-emerald-200/50"
+                                      ? "bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 ring-1 ring-blue-200/50"
+                                      : "bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 ring-1 ring-emerald-200/50"
                                   : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 ring-1 ring-gray-200/50"
                               )}>
                                 {entry.rank}
@@ -750,35 +669,23 @@ const Leaderboard = () => {
                           </TableCell>
                           <TableCell className="py-3">
                             <div className="flex items-center gap-3">
-                              {entry.userId === user?.id ? (
-                                <AvatarSelector
-                                  currentAvatar={user.avatar}
-                                  name={entry.name}
-                                  onAvatarChange={handleAvatarChange}
-                                    className="h-10 w-10 ring-2 ring-white shadow-md"
+                              <Avatar className="h-10 w-10 ring-2 ring-white shadow-md">
+                                <AvatarImage 
+                                  src={entry.avatar || getDefaultAvatarUrl(entry.name)} 
+                                  alt={entry.name} 
                                 />
-                              ) : (
-                                  <Avatar className="h-10 w-10 ring-2 ring-white shadow-md">
-                                  <AvatarImage 
-                                    src={entry.avatar || getDefaultAvatarUrl(entry.name)} 
-                                    alt={entry.name} 
-                                  />
-                                  <AvatarFallback className="text-sm font-medium bg-gray-100 text-gray-600">
-                                    {entry.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                              )}
+                                <AvatarFallback className="text-sm font-medium bg-gray-100 text-gray-600">
+                                  {entry.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
                               <div>
                                 <div className="font-medium text-gray-900">{entry.name}</div>
-                                  <div className="text-sm text-gray-500 font-mono">@{entry.userId}</div>
+                                <div className="text-sm text-gray-500 font-mono">@{entry.userId}</div>
                               </div>
-                              {entry.userId === user?.id && (
-                                  <Badge className="bg-purple-50 text-purple-600 ml-2 ring-1 ring-purple-200/50 shadow-sm">You</Badge>
-                              )}
                             </div>
                           </TableCell>
                           <TableCell className="text-center py-3">
-                              <Badge variant="secondary" className="font-mono px-2.5 py-1 bg-white text-gray-600 ring-1 ring-gray-200/50 shadow-sm">
+                            <Badge variant="secondary" className="font-mono px-2.5 py-1 bg-white text-gray-600 ring-1 ring-gray-200/50 shadow-sm">
                               <div className="flex items-center gap-1.5">
                                 <GraduationCap className="h-4 w-4 text-gray-500" />
                                 {entry.metrics.coursesEnrolled}
@@ -788,24 +695,24 @@ const Leaderboard = () => {
                           <TableCell className="text-center py-3">
                             <div className="flex items-center justify-center gap-1.5">
                               <BookOpenCheck className="h-4 w-4 text-purple-500" />
-                                <span className="font-semibold font-mono text-gray-700">{entry.metrics.coursePoints}</span>
+                              <span className="font-semibold font-mono text-gray-700">{entry.metrics.coursePoints}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-center py-3">
                             <div className="flex items-center justify-center gap-1.5">
                               <Brain className="h-4 w-4 text-emerald-500" />
-                                <span className="font-semibold font-mono text-gray-700">{entry.metrics.quizPoints}</span>
+                              <span className="font-semibold font-mono text-gray-700">{entry.metrics.quizPoints}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-right pr-8 py-3">
                             <Badge className={cn(
-                                "font-mono px-3 py-1 shadow-sm",
+                              "font-mono px-3 py-1 shadow-sm",
                               entry.rank <= 3 
                                 ? entry.rank === 1 
-                                    ? "bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600 ring-1 ring-amber-200/50"
+                                  ? "bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600 ring-1 ring-amber-200/50"
                                   : entry.rank === 2
-                                      ? "bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 ring-1 ring-blue-200/50"
-                                      : "bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 ring-1 ring-emerald-200/50"
+                                    ? "bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 ring-1 ring-blue-200/50"
+                                    : "bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 ring-1 ring-emerald-200/50"
                                 : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 ring-1 ring-gray-200/50"
                             )}>
                               <div className="flex items-center gap-1.5">
@@ -824,8 +731,8 @@ const Leaderboard = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 };
 
-export default Leaderboard; 
+export default AdminLeaderboard; 
