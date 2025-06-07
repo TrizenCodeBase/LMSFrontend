@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import {
+import { 
   Select,
   SelectContent,
   SelectItem,
@@ -357,6 +357,15 @@ const AdminDashboard = () => {
       textColor: "text-blue-600",
       change: "+12% from last month",
       metric: "Active learners"
+    },
+    { 
+      title: "Total Enrollments", 
+      value: data.enrollmentStats.totalEnrollments || 0, 
+      icon: UserCheck, 
+      color: "from-orange-50 to-orange-100",
+      textColor: "text-orange-600",
+      change: `+${data.enrollmentStats.daily} today`,
+      metric: "Course enrollments"
     },
     { 
       title: "Total Courses", 

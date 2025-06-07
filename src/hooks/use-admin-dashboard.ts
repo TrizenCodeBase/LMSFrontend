@@ -15,6 +15,7 @@ export interface DashboardStats {
     activeCourses: number;
   };
   enrollmentStats: {
+    totalEnrollments: number;
     pendingEnrollments: number;
     daily: number;
     weekly: number;
