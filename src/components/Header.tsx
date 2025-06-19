@@ -44,36 +44,36 @@ const Header = () => {
       name: "Research", 
       path: "/research",
       dropdown: [
-        { name: "Research Papers", path: "/research/papers" },
-        { name: "Case Studies", path: "/research/case-studies" },
-        { name: "Publications", path: "/research/publications" }
+        { name: "Research Papers", path: "https://www.trizenventures.com/research" },
+        { name: "Case Studies", path: "https://www.trizenventures.com/research" },
+        { name: "Publications", path: "https://www.trizenventures.com/research" }
       ]
     },
     { 
       name: "Consulting", 
       path: "/consulting",
       dropdown: [
-        { name: "Enterprise Solutions", path: "/consulting/enterprise" },
-        { name: "Digital Transformation", path: "/consulting/digital" },
-        { name: "Technology Strategy", path: "/consulting/strategy" }
+        { name: "Enterprise Solutions", path: "https://www.trizenventures.com/consulting" },
+        { name: "Digital Transformation", path: "https://www.trizenventures.com/consulting" },
+        { name: "Technology Strategy", path: "https://www.trizenventures.com/consulting" }
       ]
     },
     { 
       name: "Training", 
       path: "/training",
       dropdown: [
-        { name: "Corporate Training", path: "/training/corporate" },
-        { name: "Certification Programs", path: "/training/certification" },
-        { name: "Skills Workshops", path: "/training/workshops" }
+        { name: "Corporate Training", path: "https://lms.trizenventures.com/" },
+        { name: "Certification Programs", path: "https://lms.trizenventures.com/" },
+        { name: "Skills Workshops", path: "https://lms.trizenventures.com/" }
       ]
     },
     { 
       name: "Insights", 
       path: "/insights",
       dropdown: [
-        { name: "Blog", path: "/insights/blog" },
-        { name: "Webinars", path: "/insights/webinars" },
-        { name: "Industry Reports", path: "/insights/reports" }
+        { name: "Blog", path: "https://www.trizenventures.com/insights" },
+        { name: "Webinars", path: "https://www.trizenventures.com/insights" },
+        { name: "Industry Reports", path: "https://www.trizenventures.com/insights" }
       ]
     },
     { 
