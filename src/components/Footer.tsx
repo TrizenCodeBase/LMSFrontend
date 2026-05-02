@@ -46,7 +46,7 @@ const Footer = () => {
               </li>
               <li>
                 <a 
-                  href="https://instructor.lms.trizenventures.com/" 
+                  href={import.meta.env.VITE_INSTRUCTOR_URL} 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-muted-foreground hover:text-primary flex items-center gap-2"
@@ -88,7 +88,7 @@ const Footer = () => {
           {/* Social Links */}
           <div className="flex space-x-4 mt-4 md:mt-0">
             {/* X (Twitter) */}
-            <a href="https://x.com/TrizenVentures" className="text-gray-500 hover:text-primary">
+            <a href={import.meta.env.VITE_X_URL} className="text-gray-500 hover:text-primary">
               <span className="sr-only">X</span>
               <svg
                 className="h-6 w-6"
@@ -101,7 +101,7 @@ const Footer = () => {
             </a>
             
             {/* Instagram */}
-            <a href="https://www.instagram.com/trizenventures" className="text-gray-500 hover:text-primary" target="_blank" rel="noopener noreferrer">
+            <a href={import.meta.env.VITE_INSTAGRAM_URL} className="text-gray-500 hover:text-primary" target="_blank" rel="noopener noreferrer">
               <span className="sr-only">Instagram</span>
               <svg
                 className="h-6 w-6"
@@ -114,7 +114,7 @@ const Footer = () => {
             </a>
             
             {/* LinkedIn */}
-            <a href="https://www.linkedin.com/company/trizenventures" className="text-gray-500 hover:text-primary" target="_blank" rel="noopener noreferrer">
+            <a href={import.meta.env.VITE_LINKEDIN_URL} className="text-gray-500 hover:text-primary" target="_blank" rel="noopener noreferrer">
               <span className="sr-only">LinkedIn</span>
               <svg 
                 className="h-6 w-6" 
@@ -127,7 +127,7 @@ const Footer = () => {
             </a>
             
             {/* GitHub */}
-            <a href="https://github.com/trizenventures" className="text-gray-500 hover:text-primary" target="_blank" rel="noopener noreferrer">
+            <a href={import.meta.env.VITE_GITHUB_URL} className="text-gray-500 hover:text-primary" target="_blank" rel="noopener noreferrer">
               <span className="sr-only">GitHub</span>
               <svg
                 className="h-6 w-6"

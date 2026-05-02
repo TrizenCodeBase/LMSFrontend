@@ -44,36 +44,36 @@ const Header = () => {
       name: "Research", 
       path: "/research",
       dropdown: [
-        { name: "Research Papers", path: "https://www.trizenventures.com/research" },
-        { name: "Case Studies", path: "https://www.trizenventures.com/research" },
-        { name: "Publications", path: "https://www.trizenventures.com/research" }
+        { name: "Research Papers", path: `${import.meta.env.VITE_MAIN_SITE_URL}/research` },
+        { name: "Case Studies", path: `${import.meta.env.VITE_MAIN_SITE_URL}/research` },
+        { name: "Publications", path: `${import.meta.env.VITE_MAIN_SITE_URL}/research` }
       ]
     },
     { 
       name: "Consulting", 
       path: "/consulting",
       dropdown: [
-        { name: "Enterprise Solutions", path: "https://www.trizenventures.com/consulting" },
-        { name: "Digital Transformation", path: "https://www.trizenventures.com/consulting" },
-        { name: "Technology Strategy", path: "https://www.trizenventures.com/consulting" }
+        { name: "Enterprise Solutions", path: `${import.meta.env.VITE_MAIN_SITE_URL}/consulting` },
+        { name: "Digital Transformation", path: `${import.meta.env.VITE_MAIN_SITE_URL}/consulting` },
+        { name: "Technology Strategy", path: `${import.meta.env.VITE_MAIN_SITE_URL}/consulting` }
       ]
     },
     { 
       name: "Training", 
       path: "/training",
       dropdown: [
-        { name: "Corporate Training", path: "https://lms.trizenventures.com/" },
-        { name: "Certification Programs", path: "https://lms.trizenventures.com/" },
-        { name: "Skills Workshops", path: "https://lms.trizenventures.com/" }
+        { name: "Corporate Training", path: import.meta.env.VITE_TRAINING_URL },
+        { name: "Certification Programs", path: import.meta.env.VITE_TRAINING_URL },
+        { name: "Skills Workshops", path: import.meta.env.VITE_TRAINING_URL }
       ]
     },
     { 
       name: "Insights", 
       path: "/insights",
       dropdown: [
-        { name: "Blog", path: "https://www.trizenventures.com/insights" },
-        { name: "Webinars", path: "https://www.trizenventures.com/insights" },
-        { name: "Industry Reports", path: "https://www.trizenventures.com/insights" }
+        { name: "Blog", path: `${import.meta.env.VITE_MAIN_SITE_URL}/insights` },
+        { name: "Webinars", path: `${import.meta.env.VITE_MAIN_SITE_URL}/insights` },
+        { name: "Industry Reports", path: `${import.meta.env.VITE_MAIN_SITE_URL}/insights` }
       ]
     },
     { 

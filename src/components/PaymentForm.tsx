@@ -326,7 +326,7 @@ const PaymentForm = () => {
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm sm:text-base">
-                            I confirm that I have joined the <a href="https://chat.whatsapp.com/BTZ6BaHzcpC5QsexZw4Mqc" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">30 days web development boot camp (click to join)</a> for course updates, doubts and support
+                            I confirm that I have joined the <a href={import.meta.env.VITE_WHATSAPP_GROUP_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">30 days web development boot camp (click to join)</a> for course updates, doubts and support
                           </FormLabel>
                           <FormMessage />
                         </div>
@@ -372,7 +372,7 @@ const PaymentForm = () => {
                     Join our 30 days web development boot camp group
                   </p>
                   <a
-                    href="https://chat.whatsapp.com/BTZ6BaHzcpC5QsexZw4Mqc"
+                    href={import.meta.env.VITE_WHATSAPP_GROUP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm sm:text-base"

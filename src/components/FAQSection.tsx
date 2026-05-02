@@ -123,10 +123,10 @@ const FAQSection = () => {
                   />
                 </svg>
                 <a 
-                  href="tel:+918639648822" 
+                  href={`tel:${import.meta.env.VITE_SUPPORT_PHONE_TEL}`} 
                   className="text-primary hover:underline font-medium"
                 >
-                  +91 863 964 8822
+                  {import.meta.env.VITE_SUPPORT_PHONE}
                 </a>
               </div>
 
@@ -146,10 +146,10 @@ const FAQSection = () => {
                   />
                 </svg>
                 <a 
-                  href="mailto:contact@trizenventures.com" 
+                  href={`mailto:${import.meta.env.VITE_SUPPORT_EMAIL}`} 
                   className="text-primary hover:underline font-medium"
                 >
-                  contact@trizenventures.com
+                  {import.meta.env.VITE_SUPPORT_EMAIL}
                 </a>
               </div>
             </div>
